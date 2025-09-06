@@ -2,8 +2,29 @@
 <html>
 <head>
   <title>Récepteur Cast personnalisé</title>
+  <style>
+    body {
+      background-color: #004a77; /* Couleur de fond grise foncée */
+      color: #FFFFFF; /* Couleur du texte en blanc */
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    #logo {
+      width: 200px;
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
 <body>
+  <img id="logo" src="/assets/wizu_icon-red.png" alt="Logo de l'application">
+  <h1>Votre application de streaming</h1>
   <video id="player"></video>
   <script src="//www.gstatic.com/cast/sdk/libs/caf/1.0.0/cast_receiver_framework.js"></script>
   <script src="/receiver.js"></script>
