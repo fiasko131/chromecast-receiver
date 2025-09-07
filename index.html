@@ -1,56 +1,20 @@
+<!DOCTYPE html>
 <html>
 <head>
   <title>Récepteur Cast personnalisé</title>
-  <style>
-    body {
-      background-color: #004a77;
-      color: #FFFFFF;
-      font-family: sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      transition: background-color 0.3s ease;
-    }
-
-    #logo {
-      width: 200px;
-      margin-bottom: 20px;
-    }
-
-    #player {
-      display: none;
-      width: 100%;
-      height: 100%;
-      object-fit: contain; /* garde les proportions */
-      background: black;
-    }
-
-    /* Mode lecture */
-    body.playing {
-      background-color: black;
-    }
-
-    body.playing #logo,
-    body.playing h1 {
-      display: none;
-    }
-
-    body.playing #player {
-      display: block;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <img id="logo" src="assets/wizu_icon_red.png">
   <h1>WiZU</h1>
   <video id="player" autoplay></video>
 
-  <!-- SDK CAF doit être chargé avant ton script -->
+  <!-- Barre de progression -->
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+  </div>
+
+  <!-- SDK CAF -->
   <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
   <script src="receiver.js"></script>
 </body>
