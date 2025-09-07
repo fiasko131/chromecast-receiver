@@ -3,13 +3,13 @@ const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 
 let mediaDuration = 0; // durée en secondes de la vidéo en cours
+let hideTimeout = null; // timer pour cacher la barre
 
 // Intercepteur pour LOAD (optionnel, à garder comme demandé)
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   loadRequestData => {
     if (loadRequestData.media) {
-      // On capture la durée ici
       mediaDuration = loadRequestData.media.duration || 0;
       console.log("Durée du média (LOAD):", mediaDuration, "s");
     }
@@ -65,12 +65,22 @@ try {
 const progressContainer = document.getElementById("progress-container");
 const progressBar = document.getElementById("progress-bar");
 
+function showProgressTemporarily() {
+  progressContainer.classList.add("show");
+
+  // Réinitialise le timer à chaque update
+  if (hideTimeout) clearTimeout(hideTimeout);
+
+  hideTimeout = setTimeout(() => {
+    progressContainer.classList.remove("show");
+  }, 2000); // 2 secondes
+}
+
 playerManager.addEventListener(
   cast.framework.events.EventType.PROGRESS,
   (event) => {
     if (!mediaDuration || mediaDuration <= 0) return;
 
-    // Certaines versions exposent currentTime, d'autres currentMediaTime
     const currentTime = (typeof event.currentTime === "number")
       ? event.currentTime
       : event.currentMediaTime;
@@ -81,16 +91,12 @@ playerManager.addEventListener(
     }
 
     const pct = (currentTime / mediaDuration) * 100;
-
-    // Mise à jour de la barre
     progressBar.style.width = pct + "%";
 
-    // Afficher la barre si progression > 0
-    if (pct > 0) {
-      progressContainer.classList.add("show");
-    }
+    // Affiche la barre et programme sa disparition
+    showProgressTemporarily();
 
-    // LOG progression + couleur
+    // LOG progression
     const color = window.getComputedStyle(progressBar).backgroundColor;
     console.log(
       `Progression: ${pct.toFixed(2)}% (${currentTime.toFixed(1)}s / ${mediaDuration.toFixed(1)}s) | Couleur: ${color}`
