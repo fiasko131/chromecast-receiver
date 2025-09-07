@@ -70,9 +70,11 @@ playerManager.addEventListener(
   (event) => {
     if (!mediaDuration || mediaDuration <= 0) return;
 
-    const currentTime = event.currentTime;
+    // Certaines versions exposent currentTime, d'autres currentMediaTime
+    const currentTime = (typeof event.currentTime === "number")
+      ? event.currentTime
+      : event.currentMediaTime;
 
-    // Sécurité : currentTime peut être undefined
     if (typeof currentTime !== "number" || isNaN(currentTime)) {
       console.log("⚠️ PROGRESS sans currentTime valide:", event);
       return;
