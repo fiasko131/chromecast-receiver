@@ -44,8 +44,8 @@ body.playing #player {
 #progress-container {
   position: absolute;
   bottom: 30px;
-  left: 20px;      /* marge gauche */
-  right: 20px;     /* marge droite */
+  left: 50px;      /* marge gauche */
+  right: 50px;     /* marge droite */
   height: 6px;
   background: rgba(255, 255, 255, 0.2);
   display: none;
