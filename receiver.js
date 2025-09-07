@@ -1,30 +1,31 @@
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 
-// Intercepte la requête de chargement pour ajouter les en-têtes personnalisés
+// Intercepte la requête de chargement (le code actuel)
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   loadRequestData => {
-    const customData = loadRequestData.media.customData;
-    if (customData && customData.headers) {
+    if (loadRequestData.media && loadRequestData.media.customData) {
+      const { customData } = loadRequestData.media;
       console.log('En-têtes personnalisés reçus:', customData.headers);
-      
-      // Créez un nouvel objet Headers pour la requête
-      const requestHeaders = new Headers();
-      
-      // Parcourez les en-têtes de l'objet customData et ajoutez-les à la requête
-      for (const header in customData.headers) {
-        requestHeaders.append(header, customData.headers[header]);
-      }
-      
-      // Assurez-vous d'ajouter également l'en-tête de la méthode
       loadRequestData.media.customData = customData;
-      
-      // Appliquez les en-têtes à la requête
-      loadRequestData.media.httpHeaders = requestHeaders;
     }
-    
-    return Promise.resolve(loadRequestData);
+    return loadRequestData;
+  }
+);
+
+// Gère les changements d'état du lecteur
+playerManager.addEventListener(
+  cast.framework.events.EventType.PLAYER_STATE_CHANGED,
+  event => {
+    const playerState = event.playerState;
+    if (playerState === cast.framework.events.PlayerState.PLAYING) {
+      // La vidéo est en cours de lecture, on cache l'interface
+      document.body.classList.add('is-playing');
+    } else {
+      // Si la lecture s'arrête, on affiche à nouveau l'interface
+      document.body.classList.remove('is-playing');
+    }
   }
 );
 
