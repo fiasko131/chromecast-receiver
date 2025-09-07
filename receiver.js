@@ -2,16 +2,7 @@
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 
-const progressContainer = document.getElementById("progress-container");
-const progressBar = document.getElementById("progress-bar");
-
-let progressTimeout = null;
-
-// DEBUG
-console.log('cast.framework.events.EventType:', cast.framework.events?.EventType);
-console.log('cast.framework.ui.PlayerDataEventType:', cast.framework.ui?.PlayerDataEventType);
-
-// Intercepteur LOAD (doit être conservé)
+// Intercepteur pour LOAD (optionnel, à garder comme demandé)
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   loadRequestData => {
@@ -24,81 +15,71 @@ playerManager.setMessageInterceptor(
   }
 );
 
-// Fonction utilitaire pour afficher la barre
-function showProgressBar() {
-  progressContainer.classList.add("show");
-
-  if (progressTimeout) clearTimeout(progressTimeout);
-  progressTimeout = setTimeout(() => {
-    progressContainer.classList.remove("show");
-  }, 2000);
-}
-
+// Méthode recommandée : PlayerDataBinder
 try {
   const playerData = {};
   const playerDataBinder = new cast.framework.ui.PlayerDataBinder(playerData);
 
-  // Met à jour la largeur de la barre
-  playerDataBinder.addEventListener(
-    cast.framework.ui.PlayerDataEventType.POSITION_CHANGED,
-    () => {
-      if (playerData.duration > 0) {
-        const percent = (playerData.currentTime / playerData.duration) * 100;
-        progressBar.style.width = percent + "%";
-      }
-    }
-  );
-
-  // Affiche la barre quand l’état change
   playerDataBinder.addEventListener(
     cast.framework.ui.PlayerDataEventType.STATE_CHANGED,
     (e) => {
-      console.log("PlayerData.STATE_CHANGED:", e.value);
+      console.log('PlayerData.STATE_CHANGED:', e.value);
 
       switch (e.value) {
         case cast.framework.ui.State.PLAYING:
-        case cast.framework.ui.State.PAUSED:
-          document.body.classList.add("playing");
-          showProgressBar();
+          document.body.classList.add('playing');
           break;
-
         case cast.framework.ui.State.IDLE:
         case cast.framework.ui.State.LAUNCHING:
-          document.body.classList.remove("playing");
-          progressContainer.classList.remove("show");
-          progressBar.style.width = "0%";
-          if (progressTimeout) clearTimeout(progressTimeout);
+          document.body.classList.remove('playing');
           break;
       }
     }
   );
-
-  // Affiche la barre quand un SEEK est reçu
-  playerManager.addEventListener(
-    cast.framework.events.EventType.SEEKING,
-    (e) => {
-      console.log("SEEKING event:", e);
-      showProgressBar();
-    }
-  );
-
 } catch (err) {
-  console.warn("PlayerDataBinder indisponible, fallback MEDIA_STATUS", err);
+  console.warn('PlayerDataBinder indisponible, fallback MEDIA_STATUS', err);
 
-  // Fallback : écouter MEDIA_STATUS
   playerManager.addEventListener(
     cast.framework.events.EventType.MEDIA_STATUS,
     (event) => {
       const state = event.mediaStatus && event.mediaStatus.playerState;
-      console.log("MEDIA_STATUS playerState=", state);
-      if (state === "PLAYING") {
-        document.body.classList.add("playing");
-      } else if (state === "IDLE") {
-        document.body.classList.remove("playing");
+      console.log('MEDIA_STATUS playerState=', state);
+      if (state === 'PLAYING') {
+        document.body.classList.add('playing');
+      } else if (state === 'IDLE') {
+        document.body.classList.remove('playing');
       }
     }
   );
 }
+
+// ---- Gestion de la barre de progression ----
+const progressContainer = document.getElementById('progress-container');
+const progressBar = document.getElementById('progress-bar');
+
+// Quand le player envoie une mise à jour de progression
+playerManager.addEventListener(
+  cast.framework.events.EventType.PROGRESS,
+  (event) => {
+    const duration = playerManager.getDuration();
+    if (!duration || duration <= 0) return;
+
+    const currentTime = event.currentTime;
+    const pct = (currentTime / duration) * 100;
+
+    // Mise à jour de la barre
+    progressBar.style.width = pct + "%";
+
+    // Afficher la barre si progression > 0
+    if (pct > 0) {
+      progressContainer.classList.add('show');
+    }
+
+    // LOG progression + couleur
+    const color = window.getComputedStyle(progressBar).backgroundColor;
+    console.log(`Progression: ${pct.toFixed(2)}% | Couleur: ${color}`);
+  }
+);
 
 // Démarre le receiver
 context.start();
