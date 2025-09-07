@@ -40,7 +40,7 @@ playerManager.setMessageInterceptor(
 );
 
 // Listener pour les actions utilisateur qui doivent afficher la barre
-playerManager.addEventListener(cast.framework.events.EventType.PLAYER_SEEKED, () => showProgressTemporarily());
+playerManager.addEventListener(cast.framework.events.EventType.SEEKED, () => showProgressTemporarily());
 playerManager.addEventListener(cast.framework.events.EventType.PLAY, () => showProgressTemporarily());
 playerManager.addEventListener(cast.framework.events.EventType.PAUSE, () => showProgressTemporarily());
 
