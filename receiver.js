@@ -35,22 +35,12 @@ let totalTimeElem = document.getElementById("total-time");
 if (!currentTimeElem) {
   currentTimeElem = document.createElement("span");
   currentTimeElem.id = "current-time";
-  currentTimeElem.style.position = "absolute";
-  currentTimeElem.style.left = "5px";
-  currentTimeElem.style.top = "-20px";
-  currentTimeElem.style.color = "white";
-  currentTimeElem.style.fontSize = "14px";
   progressContainer.appendChild(currentTimeElem);
 }
 
 if (!totalTimeElem) {
   totalTimeElem = document.createElement("span");
   totalTimeElem.id = "total-time";
-  totalTimeElem.style.position = "absolute";
-  totalTimeElem.style.right = "5px";
-  totalTimeElem.style.top = "-20px";
-  totalTimeElem.style.color = "white";
-  totalTimeElem.style.fontSize = "14px";
   progressContainer.appendChild(totalTimeElem);
 }
 
