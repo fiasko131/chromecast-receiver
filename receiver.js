@@ -1,101 +1,79 @@
-// Récupère le contexte et le player
+// Récupération du contexte et du player
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 
-// Éléments DOM
-const progressBarContainer = document.getElementById('progress-container');
-const progressBar = document.getElementById('progress-bar');
-
-// Variable pour la durée du média
-let mediaDuration = 0;
-let hideProgressTimeout = null;
-
-// Fonction pour afficher temporairement la progressBar
-function showProgressTemporarily() {
-    progressBarContainer.style.opacity = 1;
-    if (hideProgressTimeout) clearTimeout(hideProgressTimeout);
-    hideProgressTimeout = setTimeout(() => {
-        progressBarContainer.style.opacity = 0;
-    }, 2000);
-}
-
 // Intercepteur pour LOAD (conservé)
 playerManager.setMessageInterceptor(
-    cast.framework.messages.MessageType.LOAD,
-    loadRequestData => {
-        if (loadRequestData.media && loadRequestData.media.customData) {
-            const { customData } = loadRequestData.media;
-            console.log('En-têtes personnalisés reçus:', customData.headers);
-            loadRequestData.media.customData = customData;
-        }
-
-        // Récupération de la durée du média
-        if (loadRequestData.media && loadRequestData.media.duration) {
-            mediaDuration = loadRequestData.media.duration;
-            console.log("Durée du média (LOAD):", mediaDuration, "s");
-        }
-
-        return loadRequestData;
+  cast.framework.messages.MessageType.LOAD,
+  loadRequestData => {
+    if (loadRequestData.media && loadRequestData.media.customData) {
+      const { customData } = loadRequestData.media;
+      console.log('En-têtes personnalisés reçus:', customData.headers);
+      loadRequestData.media.customData = customData;
     }
+    return loadRequestData;
+  }
 );
 
-// Listener pour les actions utilisateur qui doivent afficher la barre
-playerManager.addEventListener(cast.framework.events.EventType.SEEKED, () => showProgressTemporarily());
-playerManager.addEventListener(cast.framework.events.EventType.PLAY, () => showProgressTemporarily());
-playerManager.addEventListener(cast.framework.events.EventType.PAUSE, () => showProgressTemporarily());
+// Référence à la progressBar et timer
+const progressBar = document.getElementById('progress-bar');
+let hideProgressTimer = null;
 
-// Listener pour mise à jour continue de la progression
-playerManager.addEventListener(cast.framework.events.EventType.PROGRESS, (event) => {
-    if (!mediaDuration) return;
-
-    // currentTime ou currentMediaTime selon la source
-    const currentTime = (typeof event.currentTime === "number") ? event.currentTime : event.currentMediaTime;
-    if (typeof currentTime !== "number" || isNaN(currentTime)) {
-        console.log("PROGRESS sans currentTime valide:", event);
-        return;
-    }
-
-    const pct = (currentTime / mediaDuration) * 100;
-    progressBar.style.width = pct + "%";
-
-    // LOG progression et couleur
-    const color = window.getComputedStyle(progressBar).backgroundColor;
-    console.log(`Progression: ${pct.toFixed(2)}% (${currentTime.toFixed(1)}s / ${mediaDuration.toFixed(1)}s) | Couleur: ${color}`);
-});
-
-// PlayerDataBinder pour changer l'affichage du body
-try {
-    const playerData = {};
-    const playerDataBinder = new cast.framework.ui.PlayerDataBinder(playerData);
-
-    playerDataBinder.addEventListener(
-        cast.framework.ui.PlayerDataEventType.STATE_CHANGED,
-        (e) => {
-            switch (e.value) {
-                case cast.framework.ui.State.PLAYING:
-                    document.body.classList.add('playing');
-                    break;
-                case cast.framework.ui.State.IDLE:
-                case cast.framework.ui.State.LAUNCHING:
-                    document.body.classList.remove('playing');
-                    break;
-            }
-        }
-    );
-} catch (err) {
-    console.warn('PlayerDataBinder indisponible, fallback MEDIA_STATUS', err);
-    playerManager.addEventListener(
-        cast.framework.events.EventType.MEDIA_STATUS,
-        (event) => {
-            const state = event.mediaStatus && event.mediaStatus.playerState;
-            if (state === 'PLAYING') {
-                document.body.classList.add('playing');
-            } else if (state === 'IDLE') {
-                document.body.classList.remove('playing');
-            }
-        }
-    );
+// Fonction pour afficher la barre temporairement
+function showProgressTemporarily() {
+  progressBar.style.display = 'block';
+  if (hideProgressTimer) clearTimeout(hideProgressTimer);
+  hideProgressTimer = setTimeout(() => {
+    progressBar.style.display = 'none';
+  }, 2000); // 2 secondes
 }
+
+// Fonction pour mettre à jour la largeur de la barre
+function updateProgressBar(currentTime, duration) {
+  if (!duration || duration <= 0) return;
+  const progressPercent = ((currentTime / duration) * 100).toFixed(2);
+  progressBar.style.width = `${progressPercent}%`;
+  console.log(`Progression: ${progressPercent}% (currentTime=${currentTime}s, duration=${duration}s)`);
+}
+
+// Listener pour état du player (PLAY/PAUSE)
+playerManager.addEventListener(
+  cast.framework.events.EventType.PLAYER_STATE_CHANGED,
+  (event) => {
+    const state = playerManager.getPlayerState();
+    console.log('PLAYER_STATE_CHANGED:', state);
+
+    if (state === cast.framework.PlayerState.PLAYING) {
+      document.body.classList.add('playing');
+      showProgressTemporarily();
+    } else if (state === cast.framework.PlayerState.IDLE || state === cast.framework.PlayerState.PAUSED) {
+      document.body.classList.remove('playing');
+    }
+  }
+);
+
+// Listener pour seek terminé
+playerManager.addEventListener(
+  cast.framework.events.EventType.SEEKED,
+  () => {
+    console.log('SEEKED event');
+    showProgressTemporarily();
+  }
+);
+
+// Listener pour progression continue
+playerManager.addEventListener(
+  cast.framework.events.EventType.PROGRESS,
+  (event) => {
+    const currentTime = event.currentMediaTime;
+    const duration = playerManager.getMediaInformation()?.duration;
+    if (currentTime != null && duration != null) {
+      updateProgressBar(currentTime, duration);
+    } else {
+      console.log('PROGRESS sans currentTime valide:', event);
+    }
+  }
+);
 
 // Démarre le receiver
 context.start();
