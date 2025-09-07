@@ -41,40 +41,36 @@ body.playing #player {
 }
 
 /* Progress bar */
-/* Progress bar avec fond semi-transparent arrondi */
 #progress-container {
   position: absolute;
   bottom: 30px;
-  left: 10px;   /* marge gauche */
-  right: 10px;  /* marge droite */
-  height: 30px; /* plus de hauteur pour inclure les temps */
-  background: rgba(0, 0, 0, 0.5); /* fond noir semi-transparent */
-  border-radius: 15px;            /* coins arrondis */
-  display: none;
-  padding: 5px 10px; /* un peu d'espace autour de la barre et des temps */
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between; /* currentTime à gauche, totalTime à droite */
-}
-
-/* La barre de progression elle-même */
-#progress-bar {
-  flex: 1;
+  left: 20px;      /* marge gauche */
+  right: 20px;     /* marge droite */
   height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  display: none;
+  border-radius: 3px;   /* coins arrondis */
+}
+
+#progress-container.show {
+  display: block;
+}
+
+#progress-bar {
+  width: 0%;
+  height: 100%;
   background: #ff0000;
-  border-radius: 3px;
   transition: width 0.3s linear;
-  margin: 0 10px; /* espace entre les temps et la barre */
+  border-radius: 3px;
 }
 
-/* Les durées */
+/* Temps courant / durée totale */
 #current-time, #total-time {
-  color: white;
   font-size: 14px;
-  white-space: nowrap;
+  color: white;
+  position: absolute;
+  top: -20px;
 }
-
 
 #current-time {
   left: 0;
@@ -83,4 +79,3 @@ body.playing #player {
 #total-time {
   right: 0;
 }
-
