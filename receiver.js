@@ -1,11 +1,15 @@
+// La première chose à faire est d'obtenir l'instance du contexte
 const context = cast.framework.CastReceiverContext.getInstance();
 
+// Définissez le gestionnaire d'événements onReady.
+// Cette fonction sera appelée par le framework lorsque tout sera prêt.
 context.onReady = () => {
-    console.log('Le contexte Cast est prêt.');
+    console.log('Le contexte Cast est prêt, et l\'API est prête à être utilisée.');
     
-    // playerManager n'est accessible en toute sécurité qu'ici
+    // Obtenez l'instance de PlayerManager UNIQUEMENT ICI, car le contexte est maintenant initialisé.
     const playerManager = context.getPlayerManager();
 
+    // Ajoutez ici tous vos intercepteurs et vos écouteurs d'événements.
     playerManager.setMessageInterceptor(
         cast.framework.messages.MessageType.LOAD,
         loadRequestData => {
@@ -18,7 +22,6 @@ context.onReady = () => {
         }
     );
 
-    // Les écouteurs d'événements doivent être ajoutés ici, après l'initialisation du playerManager
     playerManager.addEventListener(
         cast.framework.events.EventType.PLAYING,
         () => {
@@ -34,6 +37,8 @@ context.onReady = () => {
             document.body.classList.remove('playing');
         }
     );
-
-    context.start();
 };
+
+// DÉMARREZ le contexte du récepteur après avoir défini le gestionnaire onReady.
+// Cela déclenchera l'événement onReady une fois que tout sera initialisé.
+context.start();
