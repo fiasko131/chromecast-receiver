@@ -71,6 +71,13 @@ playerManager.addEventListener(
     if (!mediaDuration || mediaDuration <= 0) return;
 
     const currentTime = event.currentTime;
+
+    // Sécurité : currentTime peut être undefined
+    if (typeof currentTime !== "number" || isNaN(currentTime)) {
+      console.log("⚠️ PROGRESS sans currentTime valide:", event);
+      return;
+    }
+
     const pct = (currentTime / mediaDuration) * 100;
 
     // Mise à jour de la barre
