@@ -3,8 +3,8 @@
   <title>Récepteur Cast personnalisé</title>
   <style>
     body {
-      background-color: #004a77; /* Couleur de fond grise foncée */
-      color: #FFFFFF; /* Couleur du texte en blanc */
+      background-color: #004a77;
+      color: #FFFFFF;
       font-family: sans-serif;
       text-align: center;
       margin: 0;
@@ -14,7 +14,7 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      overflow: hidden; /* Empêche les barres de défilement */
+      transition: background-color 0.3s ease;
     }
 
     #logo {
@@ -22,35 +22,34 @@
       margin-bottom: 20px;
     }
 
-    /* Le conteneur du lecteur vidéo doit être positionné en absolu pour une couverture totale */
     #player {
+      display: none;
       width: 100%;
       height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-      display: none; /* Cache le lecteur par défaut */
+      object-fit: contain; /* garde les proportions */
+      background: black;
     }
 
-    /* Styles appliqués lorsque la lecture commence */
+    /* Mode lecture */
     body.playing {
-      background-color: #000000; /* Fond noir */
+      background-color: black;
     }
 
     body.playing #logo,
     body.playing h1 {
-      display: none; /* Cache le logo et le titre */
+      display: none;
     }
 
     body.playing #player {
-      display: block; /* Affiche le lecteur en plein écran */
+      display: block;
     }
   </style>
 </head>
 <body>
   <img id="logo" src="assets/wizu_icon_red.png">
   <h1>WiZU</h1>
-  <video id="player"></video>
+  <video id="player" autoplay></video>
+
   <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
   <script src="receiver.js"></script>
 </body>
