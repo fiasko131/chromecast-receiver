@@ -1,44 +1,44 @@
-// La première chose à faire est d'obtenir l'instance du contexte
+// Obtenez l'instance du contexte du récepteur
 const context = cast.framework.CastReceiverContext.getInstance();
 
-// Définissez le gestionnaire d'événements onReady.
-// Cette fonction sera appelée par le framework lorsque tout sera prêt.
-context.onReady = () => {
-    console.log('Le contexte Cast est prêt, et l\'API est prête à être utilisée.');
+// Démarrer le contexte du récepteur et chaîner avec .then()
+context.start()
+  .then(() => {
+    console.log('Le contexte Cast a démarré avec succès. Les API sont prêtes.');
     
-    // Obtenez l'instance de PlayerManager UNIQUEMENT ICI, car le contexte est maintenant initialisé.
+    // Obtenez l'instance du PlayerManager ici
     const playerManager = context.getPlayerManager();
 
-    // Ajoutez ici tous vos intercepteurs et vos écouteurs d'événements.
+    // Ajoutez vos intercepteurs de messages
     playerManager.setMessageInterceptor(
-        cast.framework.messages.MessageType.LOAD,
-        loadRequestData => {
-            if (loadRequestData.media && loadRequestData.media.customData) {
-                const { customData } = loadRequestData.media;
-                console.log('En-têtes personnalisés reçus:', customData.headers);
-                loadRequestData.media.customData = customData;
-            }
-            return loadRequestData;
+      cast.framework.messages.MessageType.LOAD,
+      loadRequestData => {
+        if (loadRequestData.media && loadRequestData.media.customData) {
+          const { customData } = loadRequestData.media;
+          console.log('En-têtes personnalisés reçus:', customData.headers);
+          loadRequestData.media.customData = customData;
         }
+        return loadRequestData;
+      }
+    );
+
+    // Ajoutez vos écouteurs d'événements
+    playerManager.addEventListener(
+      cast.framework.events.EventType.PLAYING,
+      () => {
+        console.log('Lecture du média commencée, passage en mode plein écran.');
+        document.body.classList.add('playing');
+      }
     );
 
     playerManager.addEventListener(
-        cast.framework.events.EventType.PLAYING,
-        () => {
-            console.log('Lecture du média commencée, passage en mode plein écran.');
-            document.body.classList.add('playing');
-        }
+      cast.framework.events.EventType.IDLE,
+      () => {
+        console.log('Lecture du média arrêtée, retour au mode par défaut.');
+        document.body.classList.remove('playing');
+      }
     );
-
-    playerManager.addEventListener(
-        cast.framework.events.EventType.IDLE,
-        () => {
-            console.log('Lecture du média arrêtée, retour au mode par défaut.');
-            document.body.classList.remove('playing');
-        }
-    );
-};
-
-// DÉMARREZ le contexte du récepteur après avoir défini le gestionnaire onReady.
-// Cela déclenchera l'événement onReady une fois que tout sera initialisé.
-context.start();
+  })
+  .catch(error => {
+    console.error('Erreur lors du démarrage du contexte Cast:', error);
+  });
