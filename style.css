@@ -15,7 +15,31 @@ body {
 
 #logo {
   width: 200px;
-  margin-bottom: 20px;
+  height: 200px;
+  border-radius: 50%;
+  display: block;
+  margin: auto;
+  /* ⚡ Par défaut, on fait tourner */
+  animation: spin 2s linear infinite;
+}
+
+/* Variante : pulse (tu peux mettre cette classe au lieu de spin) */
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+h1 {
+  margin-top: 20px;
 }
 
 #player {
