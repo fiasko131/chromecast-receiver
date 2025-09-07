@@ -1,7 +1,9 @@
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM est prêt, initialisation du récepteur Cast...');
+const context = cast.framework.CastReceiverContext.getInstance();
+
+context.onReady = () => {
+    console.log('Le contexte Cast est prêt.');
     
-    const context = cast.framework.CastReceiverContext.getInstance();
+    // playerManager n'est accessible en toute sécurité qu'ici
     const playerManager = context.getPlayerManager();
 
     playerManager.setMessageInterceptor(
@@ -16,9 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     );
 
-    // Utilisez les chaînes de caractères littérales pour les types d'événements
+    // Les écouteurs d'événements doivent être ajoutés ici, après l'initialisation du playerManager
     playerManager.addEventListener(
-        'playing',
+        cast.framework.events.EventType.PLAYING,
         () => {
             console.log('Lecture du média commencée, passage en mode plein écran.');
             document.body.classList.add('playing');
@@ -26,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
     playerManager.addEventListener(
-        'idle',
+        cast.framework.events.EventType.IDLE,
         () => {
             console.log('Lecture du média arrêtée, retour au mode par défaut.');
             document.body.classList.remove('playing');
@@ -34,4 +36,4 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
     context.start();
-});
+};
