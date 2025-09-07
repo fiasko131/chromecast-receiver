@@ -1,5 +1,3 @@
-// Activer le mode de débogage pour le framework Cast
-cast.framework.CastReceiverContext.getInstance().setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 
