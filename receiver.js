@@ -11,8 +11,13 @@ playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   loadRequestData => {
     if (loadRequestData.media) {
-      mediaDuration = loadRequestData.media.duration || 0;
-      console.log("Durée du média (LOAD):", mediaDuration, "s");
+      if (typeof loadRequestData.media.duration === "number" && loadRequestData.media.duration > 0) {	
+    	mediaDuration = loadRequestData.media.duration;
+        console.log("Durée du média fournie:", mediaDuration, "s");
+      } else {
+       mediaDuration = 0; // ✅ laisse le player découvrir la durée
+       console.log("Durée du média non fournie, detection automatique.");
+      }
     }
 
     if (loadRequestData.media && loadRequestData.media.customData) {
