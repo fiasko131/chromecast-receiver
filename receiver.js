@@ -18,8 +18,21 @@ playerManager.setMessageInterceptor(
        mediaDuration = 0; // ✅ laisse le player découvrir la durée
        console.log("Durée du média non fournie, detection automatique.");
       }
+    
     }
-
+    // ajouts titre et thumbnail si présent
+    if (loadRequestData.media.metadata) {
+        const meta = loadRequestData.media.metadata;
+        if (meta.title) {
+          videoTitle.textContent = meta.title;
+        }
+        if (meta.images && meta.images.length > 0 && meta.images[0].url) {
+          videoThumbnail.src = meta.images[0].url;
+        } else {
+          videoThumbnail.src = "assets/placeholder.png"; // ⚡ fallback
+        }
+      }
+    }
     if (loadRequestData.media && loadRequestData.media.customData) {
       const { customData } = loadRequestData.media;
       console.log("En-têtes personnalisés reçus:", customData.headers);

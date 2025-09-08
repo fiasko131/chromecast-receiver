@@ -19,11 +19,10 @@ body {
   border-radius: 50%;
   display: block;
   margin: auto;
-  /* ⚡ Par défaut, on fait tourner */
-  animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite; /* ⚡ Par défaut, on fait tourner */
 }
 
-/* Variante : pulse (tu peux mettre cette classe au lieu de spin) */
+/* Variante : pulse */
 .pulse {
   animation: pulse 2s ease-in-out infinite;
 }
@@ -56,7 +55,8 @@ body.playing {
 }
 
 body.playing #logo,
-body.playing h1 {
+body.playing h1,
+body.playing #video-info { /* ⚡ On cache aussi les infos quand on est en lecture */
   display: none;
 }
 
@@ -64,16 +64,42 @@ body.playing #player {
   display: block;
 }
 
+/* ---- NOUVEAU : layout miniature + titre ---- */
+#video-info {
+  display: flex;              /* ⚡ alignement horizontal */
+  align-items: center;        /* centré verticalement */
+  justify-content: center;    /* centré horizontalement */
+  margin-top: 15px;
+}
+
+#video-thumbnail {
+  width: 100px;
+  height: 60px;
+  object-fit: cover;
+  margin-right: 10px;
+  border-radius: 6px;
+}
+
+#video-title {
+  font-size: 18px;
+  font-weight: bold;
+  text-align: left;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Progress bar */
 #progress-container {
   position: absolute;
   bottom: 30px;
-  left: 50px;      /* marge gauche */
-  right: 50px;     /* marge droite */
+  left: 50px;
+  right: 50px;
   height: 6px;
   background: rgba(255, 255, 255, 0.2);
   display: none;
-  border-radius: 3px;   /* coins arrondis */
+  border-radius: 3px;
 }
 
 #progress-container.show {
