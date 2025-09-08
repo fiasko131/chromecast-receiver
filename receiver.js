@@ -1,4 +1,4 @@
-// Récupère le contexte et le player
+k// Récupère le contexte et le player
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 
@@ -6,40 +6,69 @@ let mediaDuration = 0; // durée en secondes de la vidéo en cours
 let hideProgressTimeout = null; // timer pour cacher la barre
 let lastPlayerState = null; // pour filtrer les apparitions intempestives
 
+// --- ⚡ AJOUT : références UI pour titre + miniature ---
+const videoInfo = document.getElementById("video-info");
+const videoThumbnail = document.getElementById("video-thumbnail");
+const videoTitle = document.getElementById("video-title");
+const PLACEHOLDER_SRC = "assets/placeholder.png";
+
+// --- ⚡ AJOUT : helper sûr pour mettre à jour le bloc info ---
+function safeSetVideoInfoFromMetadata(metadata) {
+  try {
+    if (!metadata) {
+      if (videoInfo) videoInfo.style.display = "none";
+      return;
+    }
+
+    if (videoInfo) videoInfo.style.display = "";
+
+    const title = (metadata && metadata.title) ? metadata.title : "Titre inconnu";
+    if (videoTitle) videoTitle.textContent = title;
+
+    let imgUrl = null;
+    if (metadata && Array.isArray(metadata.images) && metadata.images.length > 0 && metadata.images[0] && metadata.images[0].url) {
+      imgUrl = metadata.images[0].url;
+    }
+
+    if (imgUrl && /^http:/.test(imgUrl) && location && location.protocol === "https:") {
+      console.warn("Miniature http bloquée (mixed content) :", imgUrl);
+      imgUrl = null;
+    }
+
+    if (videoThumbnail) {
+      videoThumbnail.onerror = function() {
+        videoThumbnail.onerror = null;
+        videoThumbnail.src = PLACEHOLDER_SRC;
+      };
+      videoThumbnail.src = imgUrl || PLACEHOLDER_SRC;
+    }
+  } catch (err) {
+    console.error("Erreur safeSetVideoInfoFromMetadata:", err);
+    if (videoInfo) videoInfo.style.display = "none";
+  }
+}
+
 // ---- Intercepteur pour LOAD ----
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   loadRequestData => {
     if (loadRequestData.media) {
       if (typeof loadRequestData.media.duration === "number" && loadRequestData.media.duration > 0) {	
-    	mediaDuration = loadRequestData.media.duration;
+        mediaDuration = loadRequestData.media.duration;
         console.log("Durée du média fournie:", mediaDuration, "s");
       } else {
-       mediaDuration = 0; // ✅ laisse le player découvrir la durée
-       console.log("Durée du média non fournie, detection automatique.");
+        mediaDuration = 0;
+        console.log("Durée du média non fournie, detection automatique.");
       }
-    
     }
 
-    // ajouts titre et thumbnail si présent
-
-    if (loadRequestData.media.metadata) {
-        const meta = loadRequestData.media.metadata;
-        if (meta.title) {
-          videoTitle.textContent = meta.title;
-        }
-        if (meta.images && meta.images.length > 0 && meta.images[0].url) {
-          videoThumbnail.src = meta.images[0].url;
-        } else {
-          videoThumbnail.src = "assets/placeholder.png"; // ⚡ fallback
-        }
-    }
-     
     if (loadRequestData.media && loadRequestData.media.customData) {
       const { customData } = loadRequestData.media;
       console.log("En-têtes personnalisés reçus:", customData.headers);
       loadRequestData.media.customData = customData;
     }
+
+    // ⚡ NE PAS toucher le DOM ici → trop tôt
     return loadRequestData;
   }
 );
@@ -86,7 +115,7 @@ function showProgressTemporarily() {
 
 // ---- Gestion des changements d'état ----
 function handlePlayerState(state) {
-  if (state === lastPlayerState) return; // rien à faire si pas de changement
+  if (state === lastPlayerState) return;
   lastPlayerState = state;
 
   switch (state) {
@@ -123,6 +152,10 @@ try {
       const state = event.mediaStatus && event.mediaStatus.playerState;
       console.log("MEDIA_STATUS playerState=", state);
       handlePlayerState(state);
+
+      // ⚡ AJOUT : mise à jour safe de l'UI
+      const md = event && event.mediaStatus && event.mediaStatus.media && event.mediaStatus.media.metadata;
+      safeSetVideoInfoFromMetadata(md);
     }
   );
 }
@@ -145,11 +178,9 @@ playerManager.addEventListener(
     const pct = (currentTime / mediaDuration) * 100;
     progressBar.style.width = pct + "%";
 
-    // Met à jour les durées
     currentTimeElem.textContent = formatTime(currentTime);
     totalTimeElem.textContent = formatTime(mediaDuration);
 
-    // LOG progression + couleur
     const color = window.getComputedStyle(progressBar).backgroundColor;
     console.log(
       `Progression: ${pct.toFixed(2)}% (${currentTime.toFixed(1)}s / ${mediaDuration.toFixed(1)}s) | Couleur: ${color}`
@@ -159,3 +190,4 @@ playerManager.addEventListener(
 
 // ---- Démarrage du receiver ----
 context.start();
+
