@@ -46,7 +46,7 @@ body {
   width: 120px;
   height: 68px; /* 16:9 par défaut */
   object-fit: cover;
-  background-color: #222; /* fallback */
+  background-color: transparent; /* fallback */
 }
 
 /* Titre vidéo */
