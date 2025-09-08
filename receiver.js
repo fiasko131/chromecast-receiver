@@ -1,4 +1,4 @@
-k// Récupère le contexte et le player
+// Récupère le contexte et le player
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 
