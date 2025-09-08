@@ -2,27 +2,33 @@ body {
   background-color: #000000;
   color: #FFFFFF;
   font-family: sans-serif;
-  text-align: center;
   margin: 0;
   padding: 0;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  justify-content: center;   /* centre horizontal */
+  align-items: center;       /* centre vertical */
   height: 100vh;
   transition: background-color 0.3s ease;
 }
 
+/* Bloc contenant logo + video info */
+#header-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Logo */
 #logo {
   width: 200px;
   height: 200px;
   border-radius: 50%;
   display: block;
-  margin: auto;
-  animation: spin 2s linear infinite; /* ⚡ Par défaut, on fait tourner */
+  /* ⚡ Par défaut, on fait tourner */
+  animation: spin 2s linear infinite;
 }
 
-/* Variante : pulse */
+/* Variante : pulse (tu peux mettre cette classe au lieu de spin) */
 .pulse {
   animation: pulse 2s ease-in-out infinite;
 }
@@ -37,95 +43,25 @@ body {
   50% { transform: scale(1.1); }
 }
 
-h1 {
-  margin-top: 20px;
-}
-
-#player {
-  display: none;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: black;
-}
-
-/* Mode lecture */
-body.playing {
-  background-color: black;
-}
-
-body.playing #logo,
-body.playing h1,
-body.playing #video-info { /* ⚡ On cache aussi les infos quand on est en lecture */
-  display: none;
-}
-
-body.playing #player {
-  display: block;
-}
-
-/* ---- NOUVEAU : layout miniature + titre ---- */
+/* Bloc info vidéo */
 #video-info {
-  display: flex;              /* ⚡ alignement horizontal */
-  align-items: center;        /* centré verticalement */
-  justify-content: center;    /* centré horizontalement */
-  margin-top: 15px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 150px; /* marge entre logo et info */
+  gap: 20px; /* espace entre image et titre */
 }
 
+/* Miniature */
 #video-thumbnail {
-  width: 100px;
-  height: 60px;
+  width: 120px;
+  height: 68px;  /* ratio 16:9 pour la miniature */
   object-fit: cover;
-  margin-right: 10px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
+/* Titre */
 #video-title {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 24px;
   text-align: left;
-  max-width: 250px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Progress bar */
-#progress-container {
-  position: absolute;
-  bottom: 30px;
-  left: 50px;
-  right: 50px;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.2);
-  display: none;
-  border-radius: 3px;
-}
-
-#progress-container.show {
-  display: block;
-}
-
-#progress-bar {
-  width: 0%;
-  height: 100%;
-  background: #004a77;
-  transition: width 0.3s linear;
-  border-radius: 3px;
-}
-
-/* Temps courant / durée totale */
-#current-time, #total-time {
-  font-size: 14px;
-  color: white;
-  position: absolute;
-  top: -20px;
-}
-
-#current-time {
-  left: 0;
-}
-
-#total-time {
-  right: 0;
 }
