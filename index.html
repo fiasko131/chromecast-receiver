@@ -5,24 +5,29 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="header-container">
-    <img id="logo" class="pulse" src="assets/logo_wizu_blue.png">
-    
+
+  <!-- Overlay central logo + info vidéo -->
+  <div id="overlay">
+    <img id="logo" src="assets/logo_wizu_blue.png">
     <div id="video-info">
       <img id="video-thumbnail" src="assets/placeholder.png">
       <span id="video-title"></span>
     </div>
   </div>
 
+  <!-- Player vidéo plein écran -->
   <video id="player" autoplay></video>
 
   <!-- Barre de progression -->
   <div id="progress-container">
     <div id="progress-bar"></div>
+    <span id="current-time"></span>
+    <span id="total-time"></span>
   </div>
 
   <!-- SDK CAF -->
   <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
   <script src="receiver.js"></script>
+
 </body>
 </html>

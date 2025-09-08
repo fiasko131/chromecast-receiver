@@ -1,67 +1,115 @@
+/* === Corps de page === */
 body {
   background-color: #000000;
   color: #FFFFFF;
   font-family: sans-serif;
   margin: 0;
   padding: 0;
-  display: flex;
-  justify-content: center;   /* centre horizontal */
-  align-items: center;       /* centre vertical */
   height: 100vh;
+  display: flex;
+  justify-content: center; /* centrage horizontal */
+  align-items: center;     /* centrage vertical */
   transition: background-color 0.3s ease;
 }
 
-/* Bloc contenant logo + video info */
-#header-container {
+/* === Bloc central logo + info vidéo === */
+#overlay {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: center; /* centre horizontalement logo et info */
 }
 
-/* Logo */
+/* Logo animé */
 #logo {
   width: 200px;
   height: 200px;
   border-radius: 50%;
-  display: block;
-  /* ⚡ Par défaut, on fait tourner */
-  animation: spin 2s linear infinite;
-}
-
-/* Variante : pulse (tu peux mettre cette classe au lieu de spin) */
-.pulse {
   animation: pulse 2s ease-in-out infinite;
+  margin-bottom: 150px; /* espace entre logo et video-info */
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
+/* Animations */
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.1); }
 }
 
-/* Bloc info vidéo */
+/* Bloc info vidéo sous le logo */
 #video-info {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  margin-top: 150px; /* marge entre logo et info */
-  gap: 20px; /* espace entre image et titre */
+  gap: 20px;
 }
 
-/* Miniature */
+/* Miniature vidéo */
 #video-thumbnail {
   width: 120px;
-  height: 68px;  /* ratio 16:9 pour la miniature */
+  height: 68px; /* 16:9 par défaut */
   object-fit: cover;
-  border-radius: 8px;
+  background-color: #222; /* fallback */
 }
 
-/* Titre */
+/* Titre vidéo */
 #video-title {
-  font-size: 24px;
-  text-align: left;
+  font-size: 18px;
+  color: #FFFFFF;
+  max-width: 300px;
+  word-wrap: break-word;
 }
+
+/* === Player vidéo === */
+#player {
+  display: none; /* caché avant lecture */
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  position: absolute; /* recouvre tout */
+  top: 0;
+  left: 0;
+  background: black;
+  z-index: 10;
+}
+
+/* === Lecture en cours === */
+body.playing #overlay {
+  display: none; /* overlay disparaît */
+}
+
+body.playing #player {
+  display: block; /* player visible */
+}
+
+/* === Progress bar === */
+#progress-container {
+  position: absolute;
+  bottom: 30px;
+  left: 50px;
+  right: 50px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  display: none;
+  border-radius: 3px;
+  z-index: 20;
+}
+
+#progress-container.show {
+  display: block;
+}
+
+#progress-bar {
+  width: 0%;
+  height: 100%;
+  background: #004a77;
+  transition: width 0.3s linear;
+  border-radius: 3px;
+}
+
+#current-time, #total-time {
+  font-size: 14px;
+  color: white;
+  position: absolute;
+  top: -20px;
+}
+
+#current-time { left: 0; }
+#total-time { right: 0; }
