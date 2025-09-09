@@ -112,20 +112,23 @@ function handlePlayerState(state) {
 
   switch (state) {
     case cast.framework.ui.State.PLAYING:
-      showBottomUiTemporarily(); // garde la logique existante
+      showBottomUiTemporarily();
       document.body.classList.add("playing");
-      if (pauseIcon) pauseIcon.style.display = "none"; // cacher l’icône pause
+      if (pauseIcon) pauseIcon.style.display = "none"; // cacher icône pause
       break;
 
     case cast.framework.ui.State.PAUSED:
-      document.body.classList.add("playing"); // overlay/logo disparaît mais player reste
-      if (pauseIcon) pauseIcon.style.display = "block"; // afficher pause
+      // ⚡ en pause → bottom-ui reste affiché
+      if (bottomUI) bottomUI.classList.add("show");
+      document.body.classList.add("playing");
+      if (pauseIcon) pauseIcon.style.display = "block"; // afficher icône pause
       break;
 
     case cast.framework.ui.State.IDLE:
     case cast.framework.ui.State.LAUNCHING:
       document.body.classList.remove("playing");
-      if (pauseIcon) pauseIcon.style.display = "none"; // masquer pause
+      if (bottomUI) bottomUI.classList.remove("show");
+      if (pauseIcon) pauseIcon.style.display = "none";
       break;
   }
 }
