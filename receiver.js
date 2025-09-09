@@ -95,15 +95,11 @@ function formatTime(sec) {
 
 // ⚡ Affiche le bottom-ui temporairement
 function showBottomUiTemporarily() {
-  if (!bottomUI) return;
-
   bottomUI.classList.add("show");
-
   if (hideProgressTimeout) clearTimeout(hideProgressTimeout);
-
   hideProgressTimeout = setTimeout(() => {
-    // ⚡ disparaît uniquement si la vidéo est en lecture (PLAYING)
-    if (lastPlayerState === cast.framework.ui.State.PLAYING) {
+    // ⚡ uniquement masquer si on n’est PAS en pause
+    if (lastPlayerState !== cast.framework.ui.State.PAUSED) {
       bottomUI.classList.remove("show");
     }
   }, 2000);

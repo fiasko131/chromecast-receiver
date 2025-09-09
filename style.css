@@ -97,27 +97,20 @@ body.playing #player {
 /* === ⚡ Nouveau bloc UI bas (progress + info small) === */
 #bottom-ui {
   position: absolute;
-  bottom: 30px;
-  left: 50px;
-  right: 50px;
-  background: rgba(50, 50, 50, 0.8); /* fond semi-transparent gris */
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-
-  opacity: 0;
-  transform: translateY(20px); /* départ décalé vers le bas */
-  pointer-events: none; /* pour ne pas bloquer clics si invisible */
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(30, 30, 30, 0.7); /* fond semi-transparent gris */
+  padding: 10px 20px;
+  display: none; /* caché par défaut */
+  z-index: 20;
 }
-/* affichage quand bottom-ui.show est actif */
-/* ⚡ déclenche fade-in/fade-out via classe .show */
+
+/* affichage quand progress-container.show est actif */
+#progress-container.show,
+#progress-container.show ~ #bottom-ui,
 #bottom-ui.show {
-  opacity: 1;
-  transform: translateY(0); /* revient en position */
-  pointer-events: auto;
+  display: block;
 }
 
 /* === Bloc info vidéo réduit (au-dessus de la barre) === */
@@ -167,3 +160,4 @@ body.playing #player {
 
 #current-time { left: 0; }
 #total-time { right: 0; }
+
