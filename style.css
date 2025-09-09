@@ -107,14 +107,14 @@ body.playing #player {
 }
 
 #video-thumbnail-small {
-  width: 60px;
-  height: 34px; /* 16:9 mini */
+  width: 80px;
+  height: 45px; /* 16:9 mini */
   object-fit: cover;
   background-color: transparent;
 }
 
 #video-title-small {
-  font-size: 14px;
+  font-size: 18px;
   color: #FFFFFF;
   max-width: 200px;
   word-wrap: break-word;
