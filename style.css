@@ -79,21 +79,53 @@ body.playing #player {
   display: block; /* player visible */
 }
 
-/* === Progress bar === */
-#progress-container {
+/* === ⚡ Nouveau bloc UI bas (progress + info small) === */
+#bottom-ui {
   position: absolute;
-  bottom: 30px;
-  left: 50px;
-  right: 50px;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.2);
-  display: none;
-  border-radius: 3px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(30, 30, 30, 0.7); /* fond semi-transparent gris */
+  padding: 10px 20px;
+  display: none; /* caché par défaut */
   z-index: 20;
 }
 
-#progress-container.show {
+/* affichage quand progress-container.show est actif */
+#progress-container.show,
+#progress-container.show ~ #bottom-ui,
+#bottom-ui.show {
   display: block;
+}
+
+/* === Bloc info vidéo réduit (au-dessus de la barre) === */
+#video-info-small {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px; /* espace avec la barre */
+}
+
+#video-thumbnail-small {
+  width: 60px;
+  height: 34px; /* 16:9 mini */
+  object-fit: cover;
+  background-color: transparent;
+}
+
+#video-title-small {
+  font-size: 14px;
+  color: #FFFFFF;
+  max-width: 200px;
+  word-wrap: break-word;
+}
+
+/* === Progress bar === */
+#progress-container {
+  position: relative; /* relatif au bottom-ui */
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
 }
 
 #progress-bar {
@@ -105,10 +137,10 @@ body.playing #player {
 }
 
 #current-time, #total-time {
-  font-size: 14px;
+  font-size: 12px;
   color: white;
   position: absolute;
-  top: -20px;
+  top: -18px;
 }
 
 #current-time { left: 0; }

@@ -3,7 +3,7 @@ const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 
 let mediaDuration = 0; // durée en secondes de la vidéo en cours
-let hideProgressTimeout = null; // timer pour cacher la barre
+let hideProgressTimeout = null; // timer pour cacher le bottom-ui
 let lastPlayerState = null; // pour filtrer les apparitions intempestives
 
 // ---- Intercepteur pour LOAD ----
@@ -29,34 +29,39 @@ playerManager.setMessageInterceptor(
     // ⚡ Récupération du titre et miniature envoyés dans metadata
     const videoTitle = document.getElementById("video-title");
     const videoThumbnail = document.getElementById("video-thumbnail");
+    const videoTitleSmall = document.getElementById("video-title-small");
+    const videoThumbnailSmall = document.getElementById("video-thumbnail-small");
 
     if (loadRequestData.media && loadRequestData.media.metadata) {
       const meta = loadRequestData.media.metadata;
 
       // Titre
-      if (meta.title && videoTitle) {
-        videoTitle.textContent = meta.title;
-      } else if (videoTitle) {
-        videoTitle.textContent = ""; // ⚡ pas de titre fourni
-      }
+      const titleText = meta.title || "En attente...";
+      if (videoTitle) videoTitle.textContent = titleText;
+      if (videoTitleSmall) videoTitleSmall.textContent = titleText;
 
       // Miniature
       if (Array.isArray(meta.images) && meta.images.length > 0 && meta.images[0].url) {
-        videoThumbnail.src = meta.images[0].url;
+        if (videoThumbnail) videoThumbnail.src = meta.images[0].url;
+        if (videoThumbnailSmall) videoThumbnailSmall.src = meta.images[0].url;
       } else {
-        videoThumbnail.src = "assets/placeholder.png"; // ⚡ fallback si aucune image
+        if (videoThumbnail) videoThumbnail.src = "assets/placeholder.png";
+        if (videoThumbnailSmall) videoThumbnailSmall.src = "assets/placeholder.png";
       }
     } else {
-      // ⚡ Aucun metadata fourni → reset
-      if (videoTitle) videoTitle.textContent = "";
+      // ⚡ Aucun metadata fourni → valeurs par défaut
+      if (videoTitle) videoTitle.textContent = "En attente...";
       if (videoThumbnail) videoThumbnail.src = "assets/placeholder.png";
+      if (videoTitleSmall) videoTitleSmall.textContent = "En attente...";
+      if (videoThumbnailSmall) videoThumbnailSmall.src = "assets/placeholder.png";
     }
 
     return loadRequestData;
   }
 );
 
-// ---- ProgressBar ----
+// ---- Bottom UI (au lieu de progressContainer seul) ----
+const bottomUI = document.getElementById("bottom-ui");
 const progressContainer = document.getElementById("progress-container");
 const progressBar = document.getElementById("progress-bar");
 
@@ -87,12 +92,12 @@ function formatTime(sec) {
          s.toString().padStart(2, "0");
 }
 
-// Affiche la barre et les durées temporairement
-function showProgressTemporarily() {
-  progressContainer.classList.add("show");
+// ⚡ Affiche le bottom-ui temporairement
+function showBottomUITemporarily() {
+  bottomUI.classList.add("show");
   if (hideProgressTimeout) clearTimeout(hideProgressTimeout);
   hideProgressTimeout = setTimeout(() => {
-    progressContainer.classList.remove("show");
+    bottomUI.classList.remove("show");
   }, 2000);
 }
 
@@ -104,7 +109,7 @@ function handlePlayerState(state) {
   switch (state) {
     case cast.framework.ui.State.PLAYING:
     case cast.framework.ui.State.PAUSED:
-      showProgressTemporarily();
+      showBottomUITemporarily();
       document.body.classList.add("playing");
       break;
     case cast.framework.ui.State.IDLE:
@@ -171,4 +176,3 @@ playerManager.addEventListener(
 
 // ---- Démarrage du receiver ----
 context.start();
-
