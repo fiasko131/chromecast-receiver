@@ -112,9 +112,8 @@ body.playing #player {
   pointer-events: none; /* pour ne pas bloquer clics si invisible */
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
-/* affichage quand progress-container.show est actif */
-#progress-container.show,
-#progress-container.show ~ #bottom-ui,
+/* affichage quand bottom-ui.show est actif */
+/* ⚡ déclenche fade-in/fade-out via classe .show */
 #bottom-ui.show {
   opacity: 1;
   transform: translateY(0); /* revient en position */
