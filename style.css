@@ -103,7 +103,7 @@ body.playing #player {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px; /* espace avec la barre */
+  margin-bottom: 30px; /* espace avec la barre */
 }
 
 #video-thumbnail-small {
