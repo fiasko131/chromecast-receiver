@@ -64,6 +64,7 @@ playerManager.setMessageInterceptor(
 const bottomUI = document.getElementById("bottom-ui");
 const progressContainer = document.getElementById("progress-container");
 const progressBar = document.getElementById("progress-bar");
+const pauseIcon = document.getElementById("pause-icon");
 
 // ---- Création des éléments de durée (current / total) ----
 let currentTimeElem = document.getElementById("current-time");
@@ -111,24 +112,23 @@ function handlePlayerState(state) {
 
   switch (state) {
     case cast.framework.ui.State.PLAYING:
-      showBottomUiTemporarily();
+      showBottomUiTemporarily(); // garde la logique existante
       document.body.classList.add("playing");
+      if (pauseIcon) pauseIcon.style.display = "none"; // cacher l’icône pause
       break;
 
     case cast.framework.ui.State.PAUSED:
-      // ⚡ en pause → bottom-ui reste affiché
-      bottomUI.classList.add("show");
-      document.body.classList.add("playing");
+      document.body.classList.add("playing"); // overlay/logo disparaît mais player reste
+      if (pauseIcon) pauseIcon.style.display = "block"; // afficher pause
       break;
 
     case cast.framework.ui.State.IDLE:
     case cast.framework.ui.State.LAUNCHING:
       document.body.classList.remove("playing");
-      bottomUI.classList.remove("show");
+      if (pauseIcon) pauseIcon.style.display = "none"; // masquer pause
       break;
   }
 }
-
 // ---- PlayerDataBinder si disponible ----
 try {
   const playerData = {};

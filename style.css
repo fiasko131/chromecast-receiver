@@ -70,6 +70,21 @@ body {
   z-index: 10;
 }
 
+/* === Icon Pause === */
+#pause-icon {
+  display: none; /* caché par défaut */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;   /* taille de l’icône */
+  height: 100px;
+  z-index: 30;    /* au-dessus du player et du bottom-ui */
+  opacity: 0.8;   /* léger semi-transparent */
+  pointer-events: none; /* clics passent au player */
+}
+
+
 /* === Lecture en cours === */
 body.playing #overlay {
   display: none; /* overlay disparaît */
