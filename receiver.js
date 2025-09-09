@@ -95,12 +95,14 @@ function formatTime(sec) {
 
 // ⚡ Affiche le bottom-ui temporairement
 function showBottomUiTemporarily() {
+  if (!bottomUI) return;
+
   bottomUI.classList.add("show");
+
   if (hideProgressTimeout) clearTimeout(hideProgressTimeout);
   hideProgressTimeout = setTimeout(() => {
-    // ⚡ uniquement masquer si on n’est PAS en pause
     if (lastPlayerState !== cast.framework.ui.State.PAUSED) {
-      bottomUI.classList.remove("show");
+      bottomUI.classList.remove("show"); // disparaît avec animation
     }
   }, 2000);
 }
