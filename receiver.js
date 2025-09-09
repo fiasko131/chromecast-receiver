@@ -93,28 +93,38 @@ function formatTime(sec) {
 }
 
 // ⚡ Affiche le bottom-ui temporairement
-function showBottomUITemporarily() {
-  bottomUI.classList.add("show");
+function showBottomUiTemporarily() {
+  bottomUi.classList.add("show");
   if (hideProgressTimeout) clearTimeout(hideProgressTimeout);
   hideProgressTimeout = setTimeout(() => {
-    bottomUI.classList.remove("show");
+    // ⚡ uniquement masquer si on n’est PAS en pause
+    if (lastPlayerState !== cast.framework.ui.State.PAUSED) {
+      bottomUi.classList.remove("show");
+    }
   }, 2000);
 }
 
 // ---- Gestion des changements d'état ----
 function handlePlayerState(state) {
-  if (state === lastPlayerState) return; // rien à faire si pas de changement
+  if (state === lastPlayerState) return;
   lastPlayerState = state;
 
   switch (state) {
     case cast.framework.ui.State.PLAYING:
-    case cast.framework.ui.State.PAUSED:
-      showBottomUITemporarily();
+      showBottomUiTemporarily();
       document.body.classList.add("playing");
       break;
+
+    case cast.framework.ui.State.PAUSED:
+      // ⚡ en pause → bottom-ui reste affiché
+      bottomUi.classList.add("show");
+      document.body.classList.add("playing");
+      break;
+
     case cast.framework.ui.State.IDLE:
     case cast.framework.ui.State.LAUNCHING:
       document.body.classList.remove("playing");
+      bottomUi.classList.remove("show");
       break;
   }
 }
