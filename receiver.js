@@ -94,7 +94,7 @@ function formatTime(sec) {
 
 // ⚡ Affiche le bottom-ui temporairement
 function showBottomUiTemporarily() {
-  bottomUi.classList.add("show");
+  bottomUI.classList.add("show");
   if (hideProgressTimeout) clearTimeout(hideProgressTimeout);
   hideProgressTimeout = setTimeout(() => {
     // ⚡ uniquement masquer si on n’est PAS en pause
@@ -117,14 +117,14 @@ function handlePlayerState(state) {
 
     case cast.framework.ui.State.PAUSED:
       // ⚡ en pause → bottom-ui reste affiché
-      bottomUi.classList.add("show");
+      bottomUI.classList.add("show");
       document.body.classList.add("playing");
       break;
 
     case cast.framework.ui.State.IDLE:
     case cast.framework.ui.State.LAUNCHING:
       document.body.classList.remove("playing");
-      bottomUi.classList.remove("show");
+      bottomUI.classList.remove("show");
       break;
   }
 }
