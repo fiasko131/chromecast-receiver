@@ -100,9 +100,11 @@ function showBottomUiTemporarily() {
   bottomUI.classList.add("show");
 
   if (hideProgressTimeout) clearTimeout(hideProgressTimeout);
+
   hideProgressTimeout = setTimeout(() => {
-    if (lastPlayerState !== cast.framework.ui.State.PAUSED) {
-      bottomUI.classList.remove("show"); // disparaît avec animation
+    // ⚡ disparaît uniquement si la vidéo est en lecture (PLAYING)
+    if (lastPlayerState === cast.framework.ui.State.PLAYING) {
+      bottomUI.classList.remove("show");
     }
   }, 2000);
 }
