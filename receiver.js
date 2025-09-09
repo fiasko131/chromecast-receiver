@@ -99,7 +99,7 @@ function showBottomUiTemporarily() {
   hideProgressTimeout = setTimeout(() => {
     // ⚡ uniquement masquer si on n’est PAS en pause
     if (lastPlayerState !== cast.framework.ui.State.PAUSED) {
-      bottomUi.classList.remove("show");
+      bottomUI.classList.remove("show");
     }
   }, 2000);
 }
