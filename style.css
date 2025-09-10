@@ -172,7 +172,6 @@ body.playing #player {
   bottom: 0;
   background: #1E1E1E;
   z-index: 15; /* au-dessus de l’overlay et en dessous de pause-icon */
-  display: flex;
   flex-direction: column;
   justify-content: center; /* centre verticalement */
   align-items: center;     /* centre horizontalement */
