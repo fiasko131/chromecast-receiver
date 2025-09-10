@@ -55,16 +55,16 @@ playerManager.setMessageInterceptor(
 
     if (loadRequestData.media.metadata) {
       const meta = loadRequestData.media.metadata;
-      const titleText = meta.title || "En attente...";
+      const titleText = meta.title || "In Progress...";
 
       // --- Titre ---
-      if (videoTitle) videoTitle.textContent = titleText;
+      if (videoTitle) videoTitle.textContent = titleText || "unknown title";
       if (videoTitleSmall) videoTitleSmall.textContent = titleText;
       if (audioTitle) audioTitle.textContent = titleText;
 
       // --- Album & Artiste (audio) ---
-      if (audioAlbum) audioAlbum.textContent = meta.albumName || "Album inconnu";
-      if (audioArtist) audioArtist.textContent = meta.artist || "Artiste inconnu";
+      if (audioAlbum) audioAlbum.textContent = "Album: "+meta.albumName || "Album: unknown";
+      if (audioArtist) audioArtist.textContent = "Artist: "+meta.artist || "Artist: unknown";
 
       // --- Miniature ---
       let imgUrl = "assets/placeholder.png";
