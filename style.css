@@ -181,6 +181,9 @@ body.playing #player {
   height: 550px;
   display: flex;
   justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.4); /* trait fin */
+  border-radius: 12px;
   align-items: center;
 }
 
@@ -200,9 +203,6 @@ body.playing #player {
   align-items: center;
   gap: 15px;
   padding: 20px;
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.4); /* trait fin */
-  border-radius: 12px;
   text-align: center;
 }
 
