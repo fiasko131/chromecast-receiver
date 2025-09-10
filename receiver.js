@@ -3,41 +3,39 @@
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 
-let mediaDuration = 0; // durée en secondes du média en cours
-let hideProgressTimeout = null; // timer pour cacher le bottom-ui (vidéo seulement)
-let lastPlayerState = null; // pour filtrer les apparitions intempestives
-let isAudioContent = false; // ⚡ indique si le média est audio
+let mediaDuration = 0;                // durée du média en secondes
+let hideProgressTimeout = null;       // timer pour cacher bottom-ui (vidéo)
+let lastPlayerState = null;           // filtrage apparition répétée
+let isAudioContent = false;           // ⚡ true si média audio
 
-// ⚡ Variables audio
-let audioCurrentTimeSec = 0;    // Temps courant audio en secondes
-let audioProgressTimer = null;  // Timer interne audio
-let lastAudioPlayerState = null; // Filtrer changements audio répétitifs
+// ⚡ Audio uniquement
+let audioCurrentTimeSec = 0;
+let audioTimer = null;
+let audioIsPlaying = false;
 
 // ==================== LOAD INTERCEPTOR ====================
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   loadRequestData => {
-    // ⚡ Durée du média
     if (loadRequestData.media) {
       if (typeof loadRequestData.media.duration === "number" && loadRequestData.media.duration > 0) {
         mediaDuration = loadRequestData.media.duration;
         console.log("Durée du média fournie:", mediaDuration, "s");
       } else {
         mediaDuration = 0;
-        console.log("Durée du média non fournie, detection automatique.");
+        console.log("Durée du média non fournie, détection automatique.");
+      }
+
+      // ⚡ Type audio ou vidéo
+      if (loadRequestData.media.contentType) {
+        isAudioContent = loadRequestData.media.contentType.startsWith("audio/");
+        console.log("Type détecté:", loadRequestData.media.contentType, "=> isAudioContent =", isAudioContent);
+      } else {
+        isAudioContent = false;
       }
     }
 
-    // ⚡ Détection type média
-    if (loadRequestData.media && loadRequestData.media.contentType) {
-      const type = loadRequestData.media.contentType;
-      isAudioContent = type.startsWith("audio/");
-      console.log("Type détecté:", type, "=> isAudioContent =", isAudioContent);
-    } else {
-      isAudioContent = false;
-    }
-
-    // ⚡ CustomData log
+    // ⚡ CustomData
     if (loadRequestData.media && loadRequestData.media.customData) {
       const { customData } = loadRequestData.media;
       console.log("En-têtes personnalisés reçus:", customData.headers);
@@ -55,16 +53,16 @@ playerManager.setMessageInterceptor(
     const audioArtist = document.getElementById("track-artist");
     const audioThumbnail = document.getElementById("audio-thumbnail");
 
-    if (loadRequestData.media && loadRequestData.media.metadata) {
+    if (loadRequestData.media.metadata) {
       const meta = loadRequestData.media.metadata;
+      const titleText = meta.title || "En attente...";
 
       // --- Titre ---
-      const titleText = meta.title || "En attente...";
       if (videoTitle) videoTitle.textContent = titleText;
       if (videoTitleSmall) videoTitleSmall.textContent = titleText;
       if (audioTitle) audioTitle.textContent = titleText;
 
-      // --- Album & artiste (audio uniquement) ---
+      // --- Album & Artiste (audio) ---
       if (audioAlbum) audioAlbum.textContent = meta.albumName || "Album inconnu";
       if (audioArtist) audioArtist.textContent = meta.artist || "Artiste inconnu";
 
@@ -94,34 +92,24 @@ playerManager.setMessageInterceptor(
 );
 
 // ==================== UI ELEMENTS ====================
-// --- Vidéo ---
+// Vidéo
 const bottomUI = document.getElementById("bottom-ui");
 const progressContainer = document.getElementById("progress-container");
 const progressBar = document.getElementById("progress-bar");
 const pauseIcon = document.getElementById("pause-icon");
 
-// --- Audio ---
+// Audio
 const audioUI = document.getElementById("audio-ui");
-const audioProgressContainer = document.getElementById("audio-progress-container");
 const audioProgressBar = document.getElementById("audio-progress-bar");
 const audioCurrentTime = document.getElementById("audio-current-time");
 const audioTotalTime = document.getElementById("audio-total-time");
 const audioPauseIcon = document.getElementById("audio-pause-icon");
 
-// --- Durées vidéo ---
+// Durées vidéo
 let currentTimeElem = document.getElementById("current-time");
 let totalTimeElem = document.getElementById("total-time");
-
-if (!currentTimeElem) {
-  currentTimeElem = document.createElement("span");
-  currentTimeElem.id = "current-time";
-  progressContainer.appendChild(currentTimeElem);
-}
-if (!totalTimeElem) {
-  totalTimeElem = document.createElement("span");
-  totalTimeElem.id = "total-time";
-  progressContainer.appendChild(totalTimeElem);
-}
+if (!currentTimeElem) { currentTimeElem = document.createElement("span"); currentTimeElem.id = "current-time"; progressContainer.appendChild(currentTimeElem); }
+if (!totalTimeElem) { totalTimeElem = document.createElement("span"); totalTimeElem.id = "total-time"; progressContainer.appendChild(totalTimeElem); }
 
 // ==================== HELPERS ====================
 function formatTime(sec) {
@@ -129,60 +117,16 @@ function formatTime(sec) {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const s = sec % 60;
-  return (h > 0 ? h.toString().padStart(2, "0") + ":" : "") +
-         m.toString().padStart(2, "0") + ":" +
-         s.toString().padStart(2, "0");
+  return (h>0? h.toString().padStart(2,"0")+":" : "") + m.toString().padStart(2,"0") + ":" + s.toString().padStart(2,"0");
 }
 
-// ⚡ Vidéo uniquement : affiche bottom-ui temporairement
+// Vidéo uniquement : bottom-ui
 function showBottomUiTemporarily() {
   bottomUI.classList.add("show");
   if (hideProgressTimeout) clearTimeout(hideProgressTimeout);
   hideProgressTimeout = setTimeout(() => {
-    if (lastPlayerState !== cast.framework.ui.State.PAUSED) {
-      bottomUI.classList.remove("show");
-    }
+    if (lastPlayerState !== cast.framework.ui.State.PAUSED) bottomUI.classList.remove("show");
   }, 2000);
-}
-
-// ==================== AUDIO TIMER ====================
-function updateAudioProgressUI() {
-  if (!isAudioContent || !audioProgressContainer) return;
-  const pct = (audioCurrentTimeSec / mediaDuration) * 100;
-  audioProgressBar.style.width = pct + "%";
-  audioCurrentTime.textContent = formatTime(audioCurrentTimeSec);
-  audioTotalTime.textContent = formatTime(mediaDuration);
-  console.log(`[Audio Timer] currentTime=${audioCurrentTimeSec.toFixed(1)}s | duration=${mediaDuration.toFixed(1)}s | pct=${pct.toFixed(2)}%`);
-}
-
-function startAudioProgressTimer() {
-  if (!isAudioContent) return;
-  if (audioProgressTimer) clearInterval(audioProgressTimer);
-  audioProgressTimer = setInterval(() => {
-    audioCurrentTimeSec += 0.5;
-    if (audioCurrentTimeSec > mediaDuration) {
-      audioCurrentTimeSec = mediaDuration;
-      clearInterval(audioProgressTimer);
-      console.log("[Audio Timer] Média terminé, timer stoppé.");
-    }
-    updateAudioProgressUI();
-  }, 500);
-  console.log("[Audio Timer] Démarré");
-}
-
-function stopAudioProgressTimer() {
-  if (audioProgressTimer) {
-    clearInterval(audioProgressTimer);
-    audioProgressTimer = null;
-    console.log("[Audio Timer] Arrêté");
-  }
-}
-
-function resetAudioProgressTimer(newCurrentTime = 0) {
-  audioCurrentTimeSec = newCurrentTime;
-  updateAudioProgressUI();
-  console.log(`[Audio Timer] Reset currentTime=${audioCurrentTimeSec}`);
-  startAudioProgressTimer();
 }
 
 // ==================== PLAYER STATE ====================
@@ -190,37 +134,31 @@ function handlePlayerState(state) {
   if (state === lastPlayerState) return;
   lastPlayerState = state;
 
-  switch (state) {
+  switch(state) {
     case cast.framework.ui.State.PLAYING:
       document.body.classList.add("playing");
       if (isAudioContent) {
-        // --- AUDIO ---
         audioUI.style.display = "flex";
         bottomUI.classList.remove("show");
         document.getElementById("player").style.display = "none";
         if (audioPauseIcon) audioPauseIcon.style.display = "none";
-        startAudioProgressTimer();
       } else {
-        // --- VIDEO ---
         showBottomUiTemporarily();
         document.getElementById("player").style.display = "block";
         audioUI.style.display = "none";
         if (pauseIcon) pauseIcon.style.display = "none";
       }
       break;
-
     case cast.framework.ui.State.PAUSED:
       document.body.classList.add("playing");
       if (isAudioContent) {
         audioUI.style.display = "flex";
         if (audioPauseIcon) audioPauseIcon.style.display = "block";
-        stopAudioProgressTimer();
       } else {
         if (bottomUI) bottomUI.classList.add("show");
         if (pauseIcon) pauseIcon.style.display = "block";
       }
       break;
-
     case cast.framework.ui.State.IDLE:
     case cast.framework.ui.State.LAUNCHING:
       document.body.classList.remove("playing");
@@ -228,9 +166,6 @@ function handlePlayerState(state) {
       if (pauseIcon) pauseIcon.style.display = "none";
       if (audioPauseIcon) audioPauseIcon.style.display = "none";
       audioUI.style.display = "none";
-      stopAudioProgressTimer();
-      audioCurrentTimeSec = 0;
-      updateAudioProgressUI();
       break;
   }
 }
@@ -239,7 +174,6 @@ function handlePlayerState(state) {
 try {
   const playerData = {};
   const playerDataBinder = new cast.framework.ui.PlayerDataBinder(playerData);
-
   playerDataBinder.addEventListener(
     cast.framework.ui.PlayerDataEventType.STATE_CHANGED,
     (e) => {
@@ -259,49 +193,67 @@ try {
   );
 }
 
-// ==================== DURATION CHANGE ====================
-playerManager.addEventListener(
-  cast.framework.events.EventType.DURATION_CHANGE,
-  (event) => {
-    if (event.duration && event.duration > 0) {
-      mediaDuration = event.duration;
-      console.log("📌 Durée corrigée par Chromecast:", mediaDuration, "s");
+// ==================== AUDIO TIMER ====================
+function updateAudioProgressUI() {
+  if (!isAudioContent || !mediaDuration || mediaDuration <= 0) return;
+  const pct = (audioCurrentTimeSec / mediaDuration) * 100;
+  audioProgressBar.style.width = pct + "%";
+  audioCurrentTime.textContent = formatTime(audioCurrentTimeSec);
+  audioTotalTime.textContent = formatTime(mediaDuration);
+}
+
+function startAudioTimer() {
+  if (audioTimer) clearInterval(audioTimer);
+  audioTimer = setInterval(() => {
+    if (audioIsPlaying && audioCurrentTimeSec < mediaDuration) {
+      audioCurrentTimeSec += 1;
+      updateAudioProgressUI();
     }
+  }, 1000);
+}
+
+function stopAudioTimer() {
+  if (audioTimer) clearInterval(audioTimer);
+  audioTimer = null;
+}
+
+// ==================== MEDIA_STATUS POUR AUDIO ====================
+playerManager.addEventListener(
+  cast.framework.events.EventType.MEDIA_STATUS,
+  (event) => {
+    if (!isAudioContent || !event.mediaStatus) return;
+
+    const newTime = event.mediaStatus.currentTime;
+    if (typeof newTime === "number" && !isNaN(newTime)) {
+      audioCurrentTimeSec = newTime;           // ⚡ SEEK détecté
+      updateAudioProgressUI();
+      console.log(`[Audio SEEK] currentTime mis à jour: ${audioCurrentTimeSec}s`);
+    }
+
+    audioIsPlaying = (event.mediaStatus.playerState === "PLAYING");
+    if (audioIsPlaying) startAudioTimer();
+    else stopAudioTimer();
   }
 );
 
-// ==================== PROGRESS ====================
-// ⚡ Pour la vidéo : progression via PROGRESS SDK
+// ==================== PROGRESS POUR VIDEO ====================
 playerManager.addEventListener(
   cast.framework.events.EventType.PROGRESS,
   (event) => {
-    if (isAudioContent) {
-      // ⚡ AUDIO géré par timer
-      updateAudioProgressUI(); // met à jour barre et durée actuelle
-      if (event.currentTime != null) {
-        audioCurrentTimeSec = event.currentTime; // ajuste en cas de seek
-        console.log(`[Audio SEEKED] currentTime mis à jour à ${audioCurrentTimeSec}s`);
-      }
-      return; // stop ici, le reste du code PROGRESS est pour vidéo
-    }
+    if (isAudioContent) return;  // AUDIO géré par timer
+    if (!mediaDuration || mediaDuration <= 0) return;
 
-    const duration = mediaDuration;
-    if (!duration || duration <= 0) return;
-
-    const currentTime = (typeof event.currentTime === "number")
-      ? event.currentTime
-      : event.currentMediaTime;
-
+    const currentTime = (typeof event.currentTime === "number") ? event.currentTime : event.currentMediaTime;
     if (typeof currentTime !== "number" || isNaN(currentTime)) return;
 
-    const pct = (currentTime / duration) * 100;
+    const pct = (currentTime / mediaDuration) * 100;
     progressBar.style.width = pct + "%";
     currentTimeElem.textContent = formatTime(currentTime);
-    totalTimeElem.textContent = formatTime(duration);
+    totalTimeElem.textContent = formatTime(mediaDuration);
 
-    console.log(`[Video PROGRESS] currentTime=${currentTime.toFixed(1)}s | duration=${duration.toFixed(1)}s | pct=${pct.toFixed(2)}%`);
+    console.log(`[Video PROGRESS] currentTime=${currentTime.toFixed(1)}s | duration=${mediaDuration.toFixed(1)}s | pct=${pct.toFixed(2)}%`);
   }
 );
 
-// ==================== START RECEIVER ====================
+// ==================== START RECEIVER ========================
 context.start();
