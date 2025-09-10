@@ -188,12 +188,13 @@ body.playing #player {
 }
 
 /* Logo en haut à gauche */
-#logo {
+#logo-audio {
   position: absolute;
   top: 20px;
   left: 20px;
   width: 60px;
   height: 60px;
+  animation: pulse 2s ease-in-out infinite;
 }
 
 /* Bloc central avec contour arrondi */
