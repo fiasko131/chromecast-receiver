@@ -275,7 +275,15 @@ playerManager.addEventListener(
 playerManager.addEventListener(
   cast.framework.events.EventType.PROGRESS,
   (event) => {
-    if (isAudioContent) return; // AUDIO géré par timer
+    if (isAudioContent) {
+      // ⚡ AUDIO géré par timer
+      updateAudioProgressUI(); // met à jour barre et durée actuelle
+      if (event.currentTime != null) {
+        audioCurrentTimeSec = event.currentTime; // ajuste en cas de seek
+        console.log(`[Audio SEEKED] currentTime mis à jour à ${audioCurrentTimeSec}s`);
+      }
+      return; // stop ici, le reste du code PROGRESS est pour vidéo
+    }
 
     const duration = mediaDuration;
     if (!duration || duration <= 0) return;
