@@ -170,7 +170,6 @@ body.playing #player {
   top: 0; left: 0; right: 0; bottom: 0;
   background: #1E1E1E;
   z-index: 15;
-  display: flex;
   justify-content: center; /* centre vertical */
   align-items: center;     /* centre horizontal */
 }
@@ -178,8 +177,8 @@ body.playing #player {
 /* Conteneur fixe centré */
 #general-audio-ui {
   position: relative; /* pour positionner le logo en absolu */
-  width: 350px;
-  height: 350px;
+  width: 550px;
+  height: 550px;
   display: flex;
   justify-content: center;
   align-items: center;
