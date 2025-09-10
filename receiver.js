@@ -6,12 +6,18 @@ const playerManager = context.getPlayerManager();
 let mediaDuration = 0; // durée en secondes du média en cours
 let hideProgressTimeout = null; // timer pour cacher le bottom-ui (vidéo seulement)
 let lastPlayerState = null; // pour filtrer les apparitions intempestives
-let isAudioContent = false; // ⚡ nouveau : indique si le média est audio
+let isAudioContent = false; // ⚡ indique si le média est audio
+
+// ⚡ Variables audio
+let audioCurrentTimeSec = 0;    // Temps courant audio en secondes
+let audioProgressTimer = null;  // Timer interne audio
+let lastAudioPlayerState = null; // Filtrer changements audio répétitifs
 
 // ==================== LOAD INTERCEPTOR ====================
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   loadRequestData => {
+    // ⚡ Durée du média
     if (loadRequestData.media) {
       if (typeof loadRequestData.media.duration === "number" && loadRequestData.media.duration > 0) {
         mediaDuration = loadRequestData.media.duration;
@@ -22,7 +28,7 @@ playerManager.setMessageInterceptor(
       }
     }
 
-    // ⚡ Détection du type de média
+    // ⚡ Détection type média
     if (loadRequestData.media && loadRequestData.media.contentType) {
       const type = loadRequestData.media.contentType;
       isAudioContent = type.startsWith("audio/");
@@ -31,6 +37,7 @@ playerManager.setMessageInterceptor(
       isAudioContent = false;
     }
 
+    // ⚡ CustomData log
     if (loadRequestData.media && loadRequestData.media.customData) {
       const { customData } = loadRequestData.media;
       console.log("En-têtes personnalisés reçus:", customData.headers);
@@ -71,7 +78,7 @@ playerManager.setMessageInterceptor(
       if (audioThumbnail) audioThumbnail.src = imgUrl;
 
     } else {
-      // ⚡ Aucun metadata fourni → valeurs par défaut
+      // ⚡ Valeurs par défaut
       if (videoTitle) videoTitle.textContent = "En attente...";
       if (videoThumbnail) videoThumbnail.src = "assets/placeholder.png";
       if (videoTitleSmall) videoTitleSmall.textContent = "En attente...";
@@ -93,7 +100,7 @@ const progressContainer = document.getElementById("progress-container");
 const progressBar = document.getElementById("progress-bar");
 const pauseIcon = document.getElementById("pause-icon");
 
-// --- Audio ⚡ nouvel UI ---
+// --- Audio ---
 const audioUI = document.getElementById("audio-ui");
 const audioProgressContainer = document.getElementById("audio-progress-container");
 const audioProgressBar = document.getElementById("audio-progress-bar");
@@ -138,6 +145,46 @@ function showBottomUiTemporarily() {
   }, 2000);
 }
 
+// ==================== AUDIO TIMER ====================
+function updateAudioProgressUI() {
+  if (!isAudioContent || !audioProgressContainer) return;
+  const pct = (audioCurrentTimeSec / mediaDuration) * 100;
+  audioProgressBar.style.width = pct + "%";
+  audioCurrentTime.textContent = formatTime(audioCurrentTimeSec);
+  audioTotalTime.textContent = formatTime(mediaDuration);
+  console.log(`[Audio Timer] currentTime=${audioCurrentTimeSec.toFixed(1)}s | duration=${mediaDuration.toFixed(1)}s | pct=${pct.toFixed(2)}%`);
+}
+
+function startAudioProgressTimer() {
+  if (!isAudioContent) return;
+  if (audioProgressTimer) clearInterval(audioProgressTimer);
+  audioProgressTimer = setInterval(() => {
+    audioCurrentTimeSec += 0.5;
+    if (audioCurrentTimeSec > mediaDuration) {
+      audioCurrentTimeSec = mediaDuration;
+      clearInterval(audioProgressTimer);
+      console.log("[Audio Timer] Média terminé, timer stoppé.");
+    }
+    updateAudioProgressUI();
+  }, 500);
+  console.log("[Audio Timer] Démarré");
+}
+
+function stopAudioProgressTimer() {
+  if (audioProgressTimer) {
+    clearInterval(audioProgressTimer);
+    audioProgressTimer = null;
+    console.log("[Audio Timer] Arrêté");
+  }
+}
+
+function resetAudioProgressTimer(newCurrentTime = 0) {
+  audioCurrentTimeSec = newCurrentTime;
+  updateAudioProgressUI();
+  console.log(`[Audio Timer] Reset currentTime=${audioCurrentTimeSec}`);
+  startAudioProgressTimer();
+}
+
 // ==================== PLAYER STATE ====================
 function handlePlayerState(state) {
   if (state === lastPlayerState) return;
@@ -152,6 +199,7 @@ function handlePlayerState(state) {
         bottomUI.classList.remove("show");
         document.getElementById("player").style.display = "none";
         if (audioPauseIcon) audioPauseIcon.style.display = "none";
+        startAudioProgressTimer();
       } else {
         // --- VIDEO ---
         showBottomUiTemporarily();
@@ -166,6 +214,7 @@ function handlePlayerState(state) {
       if (isAudioContent) {
         audioUI.style.display = "flex";
         if (audioPauseIcon) audioPauseIcon.style.display = "block";
+        stopAudioProgressTimer();
       } else {
         if (bottomUI) bottomUI.classList.add("show");
         if (pauseIcon) pauseIcon.style.display = "block";
@@ -179,6 +228,9 @@ function handlePlayerState(state) {
       if (pauseIcon) pauseIcon.style.display = "none";
       if (audioPauseIcon) audioPauseIcon.style.display = "none";
       audioUI.style.display = "none";
+      stopAudioProgressTimer();
+      audioCurrentTimeSec = 0;
+      updateAudioProgressUI();
       break;
   }
 }
@@ -197,7 +249,6 @@ try {
   );
 } catch (err) {
   console.warn("PlayerDataBinder indisponible, fallback MEDIA_STATUS", err);
-
   playerManager.addEventListener(
     cast.framework.events.EventType.MEDIA_STATUS,
     (event) => {
@@ -208,7 +259,7 @@ try {
   );
 }
 
-// ==================== DURATION_CHANGE ====================
+// ==================== DURATION CHANGE ====================
 playerManager.addEventListener(
   cast.framework.events.EventType.DURATION_CHANGE,
   (event) => {
@@ -220,47 +271,27 @@ playerManager.addEventListener(
 );
 
 // ==================== PROGRESS ====================
+// ⚡ Pour la vidéo : progression via PROGRESS SDK
 playerManager.addEventListener(
   cast.framework.events.EventType.PROGRESS,
   (event) => {
-    // -- récupérer la durée depuis plusieurs sources
-    let duration = mediaDuration;
+    if (isAudioContent) return; // AUDIO géré par timer
 
-    if ((!duration || duration <= 0) && event.media && typeof event.media.duration === "number") {
-      duration = event.media.duration;
-    }
-
-    if (!duration || duration <= 0) {
-      console.log("⏳ PROGRESS ignoré : durée inconnue");
-      return;
-    }
+    const duration = mediaDuration;
+    if (!duration || duration <= 0) return;
 
     const currentTime = (typeof event.currentTime === "number")
       ? event.currentTime
       : event.currentMediaTime;
 
-    if (typeof currentTime !== "number" || isNaN(currentTime)) {
-      console.log("⚠️ PROGRESS sans currentTime valide:", event);
-      return;
-    }
+    if (typeof currentTime !== "number" || isNaN(currentTime)) return;
 
     const pct = (currentTime / duration) * 100;
+    progressBar.style.width = pct + "%";
+    currentTimeElem.textContent = formatTime(currentTime);
+    totalTimeElem.textContent = formatTime(duration);
 
-    if (isAudioContent) {
-      // --- AUDIO ---
-      audioProgressBar.style.width = pct + "%";
-      audioCurrentTime.textContent = formatTime(currentTime);
-      audioTotalTime.textContent = formatTime(duration);
-    } else {
-      // --- VIDEO ---
-      progressBar.style.width = pct + "%";
-      currentTimeElem.textContent = formatTime(currentTime);
-      totalTimeElem.textContent = formatTime(duration);
-    }
-
-    console.log(
-      `Progression: ${pct.toFixed(2)}% (${currentTime.toFixed(1)}s / ${duration.toFixed(1)}s)`
-    );
+    console.log(`[Video PROGRESS] currentTime=${currentTime.toFixed(1)}s | duration=${duration.toFixed(1)}s | pct=${pct.toFixed(2)}%`);
   }
 );
 
