@@ -208,11 +208,32 @@ try {
   );
 }
 
+// ==================== DURATION_CHANGE ====================
+playerManager.addEventListener(
+  cast.framework.events.EventType.DURATION_CHANGE,
+  (event) => {
+    if (event.duration && event.duration > 0) {
+      mediaDuration = event.duration;
+      console.log("📌 Durée corrigée par Chromecast:", mediaDuration, "s");
+    }
+  }
+);
+
 // ==================== PROGRESS ====================
 playerManager.addEventListener(
   cast.framework.events.EventType.PROGRESS,
   (event) => {
-    if (!mediaDuration || mediaDuration <= 0) return;
+    // -- récupérer la durée depuis plusieurs sources
+    let duration = mediaDuration;
+
+    if ((!duration || duration <= 0) && event.media && typeof event.media.duration === "number") {
+      duration = event.media.duration;
+    }
+
+    if (!duration || duration <= 0) {
+      console.log("⏳ PROGRESS ignoré : durée inconnue");
+      return;
+    }
 
     const currentTime = (typeof event.currentTime === "number")
       ? event.currentTime
@@ -223,22 +244,22 @@ playerManager.addEventListener(
       return;
     }
 
-    const pct = (currentTime / mediaDuration) * 100;
+    const pct = (currentTime / duration) * 100;
 
     if (isAudioContent) {
       // --- AUDIO ---
       audioProgressBar.style.width = pct + "%";
       audioCurrentTime.textContent = formatTime(currentTime);
-      audioTotalTime.textContent = formatTime(mediaDuration);
+      audioTotalTime.textContent = formatTime(duration);
     } else {
       // --- VIDEO ---
       progressBar.style.width = pct + "%";
       currentTimeElem.textContent = formatTime(currentTime);
-      totalTimeElem.textContent = formatTime(mediaDuration);
+      totalTimeElem.textContent = formatTime(duration);
     }
 
     console.log(
-      `Progression: ${pct.toFixed(2)}% (${currentTime.toFixed(1)}s / ${mediaDuration.toFixed(1)}s)`
+      `Progression: ${pct.toFixed(2)}% (${currentTime.toFixed(1)}s / ${duration.toFixed(1)}s)`
     );
   }
 );
