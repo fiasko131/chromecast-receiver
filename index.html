@@ -38,23 +38,26 @@
   </div>
 
   <!-- PARTIE AUDIO -->
-  <!-- === Nouveau bloc UI Audio (plein écran) === -->
+<!-- Bloc principal (plein écran) -->
 <div id="audio-ui">
- <div id="audio-thumbnail-wrapper">
-  <img id="audio-thumbnail" src="assets/placeholder.png">
-  <img id="audio-pause-icon" src="assets/pause_icon.png" alt="Pause">
-</div>
-  <div id="info-track">
-    <div id="track-title">Titre en attente...</div>
-    <div id="track-album">Album inconnu</div>
-    <div id="track-artist">Artiste inconnu</div>
-  </div>
+  <!-- Conteneur fixe 350x350 -->
+  <div id="general-audio-ui">
+    <!-- Logo en haut à gauche -->
+    <img id="logo" src="assets/logo_wizu_blue.png" alt="Logo">
 
-  <!-- Progress bar audio -->
-  <div id="audio-progress-container">
-    <div id="audio-progress-bar"></div>
-    <span id="audio-current-time">0:00</span>
-    <span id="audio-total-time">0:00</span>
+    <!-- Sous-bloc centré avec contour arrondi -->
+    <div id="audio-content">
+      <img id="audio-thumbnail" src="assets/placeholder.png">
+      <div id="track-title">Titre en attente...</div>
+      <div id="track-album">Album inconnu</div>
+      <div id="track-artist">Artiste inconnu</div>
+
+      <div id="audio-progress-container">
+        <div id="audio-progress-bar"></div>
+        <span id="audio-current-time">0:00</span>
+        <span id="audio-total-time">0:00</span>
+      </div>
+    </div>
   </div>
 </div>
 

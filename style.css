@@ -163,21 +163,48 @@ body.playing #player {
 
 /* ==== PARTIE AUDIO ====== */
 /* === UI Audio === */
+/* Bloc plein écran */
 #audio-ui {
   display: none; /* caché par défaut */
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: #1E1E1E;
-  z-index: 15; /* au-dessus de l’overlay et en dessous de pause-icon */
+  z-index: 15;
+  display: flex;
+  justify-content: center; /* centre vertical */
+  align-items: center;     /* centre horizontal */
+}
+
+/* Conteneur fixe centré */
+#general-audio-ui {
+  position: relative; /* pour positionner le logo en absolu */
+  width: 350px;
+  height: 350px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Logo en haut à gauche */
+#logo {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 60px;
+  height: 60px;
+}
+
+/* Bloc central avec contour arrondi */
+#audio-content {
+  display: flex;
   flex-direction: column;
-  justify-content: center; /* centre verticalement */
-  align-items: center;     /* centre horizontalement */
-  gap: 20px;
-  text-align: center;
+  align-items: center;
+  gap: 15px;
   padding: 20px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.4); /* trait fin */
+  border-radius: 12px;
+  text-align: center;
 }
 
 #audio-thumbnail-wrapper {
