@@ -15,10 +15,11 @@ let audioIsPlaying = false;
 
 // ==================== IMAGE NAMESPACE ====================
 const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
-const imageMessageBus = context.getCastMessageBus(
+const imageMessageBus = context.getPlayerManager().getCastMessageBus(
     IMAGE_NAMESPACE,
     cast.framework.messages.MessageType.JSON
 );
+
 
 imageMessageBus.onMessage = (event) => {
     const data = event.data;
