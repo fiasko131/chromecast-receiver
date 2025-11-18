@@ -15,11 +15,8 @@ let audioIsPlaying = false;
 
 // ==================== IMAGE NAMESPACE ====================
 const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
-// créer le bus
-const imageMessageBus = context.getCastMessageBus(IMAGE_NAMESPACE);
-
-
-imageMessageBus.onMessage = (event) => {
+// ✅ CAF v3 : écouteur pour messages personnalisés
+context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     const data = event.data;
     console.log("Message IMAGE reçu:", data);
 
@@ -27,9 +24,8 @@ imageMessageBus.onMessage = (event) => {
         showImage(data.url);
     } else if (data.type === 'NEXT_IMAGE') {
         console.log("Next image demandé");
-        // Implémenter si besoin
     }
-};
+});
 
 // ==================== LOAD INTERCEPTOR ====================
 playerManager.setMessageInterceptor(
