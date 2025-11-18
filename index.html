@@ -18,10 +18,19 @@
   <!-- Player vidéo plein écran -->
   <video id="player" autoplay></video>
 
+  <!-- Vue image plein écran (nouveau) -->
+  <img id="image-viewer" alt="Image castée" />
+
+  <!-- Overlay de chargement pour images -->
+  <div id="image-loading" aria-hidden="true">
+    <div class="spinner"></div>
+    <div class="loading-text">Chargement...</div>
+  </div>
+
   <!-- Icône pause en superposition du player -->
   <img id="pause-icon" src="assets/pause_icon.png" alt="Pause">
 
-  <!-- ⚡ Nouveau bloc UI bas -->
+  <!-- Nouveau bloc UI bas -->
   <div id="bottom-ui">
     <!-- Petit bloc info vidéo -->
     <div id="video-info-small">
@@ -38,29 +47,28 @@
   </div>
 
   <!-- PARTIE AUDIO -->
-<!-- Bloc principal (plein écran) -->
-<div id="audio-ui">
-  <!-- Conteneur fixe 350x350 -->
-  <div id="general-audio-ui">
-    <!-- Logo en haut à gauche -->
-    <img id="logo-audio" src="assets/logo_wizu_blue.png" alt="Logo">
+  <!-- Bloc principal (plein écran) -->
+  <div id="audio-ui">
+    <!-- Conteneur fixe 350x350 -->
+    <div id="general-audio-ui">
+      <!-- Logo en haut à gauche -->
+      <img id="logo-audio" src="assets/logo_wizu_blue.png" alt="Logo">
 
-    <!-- Sous-bloc centré avec contour arrondi -->
-    <div id="audio-content">
-      <img id="audio-thumbnail" src="assets/placeholder.png">
-      <div id="track-title">Titre en attente...</div>
-      <div id="track-album">Album inconnu</div>
-      <div id="track-artist">Artiste inconnu</div>
+      <!-- Sous-bloc centré avec contour arrondi -->
+      <div id="audio-content">
+        <img id="audio-thumbnail" src="assets/placeholder.png">
+        <div id="track-title">Titre en attente...</div>
+        <div id="track-album">Album inconnu</div>
+        <div id="track-artist">Artiste inconnu</div>
 
-      <div id="audio-progress-container">
-        <div id="audio-progress-bar"></div>
-        <span id="audio-current-time">0:00</span>
-        <span id="audio-total-time">0:00</span>
+        <div id="audio-progress-container">
+          <div id="audio-progress-bar"></div>
+          <span id="audio-current-time">0:00</span>
+          <span id="audio-total-time">0:00</span>
+        </div>
       </div>
     </div>
   </div>
-</div>
-
 
   <!-- SDK CAF -->
   <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>

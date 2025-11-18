@@ -13,6 +13,35 @@ let audioCurrentTimeSec = 0;
 let audioTimer = null;
 let audioIsPlaying = false;
 
+// ==================== NOUVEAU : MESSAGE BUS pour images/contrôles ====================
+const IMAGE_NAMESPACE = 'urn:x-cast:wizu.channel'; // à garder identique côté Android
+const messageBus = context.getCastMessageBus(IMAGE_NAMESPACE, cast.receiver.CastMessageBus.MessageType.JSON);
+
+messageBus.onMessage = (event) => {
+  try {
+    const data = (typeof event.data === 'string') ? JSON.parse(event.data) : event.data;
+    if (!data || !data.cmd) return;
+
+    switch (data.cmd) {
+      case 'showImage':
+        // { cmd: "showImage", url: "...", next: "...", next2: "..." }
+        showImage(data.url, data.next, data.next2);
+        break;
+      case 'hideImage':
+        hideImage();
+        break;
+      case 'showVideo':
+        // { cmd: "showVideo", url: "...", title?: "...", thumbnail?: "..." }
+        showVideo(data.url, data.title, data.thumbnail);
+        break;
+      default:
+        console.warn("Message non géré sur IMAGE_NAMESPACE:", data.cmd);
+    }
+  } catch (e) {
+    console.error("Erreur parsing messageBus:", e);
+  }
+};
+
 // ==================== LOAD INTERCEPTOR ====================
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
@@ -53,7 +82,7 @@ playerManager.setMessageInterceptor(
     const audioArtist = document.getElementById("track-artist");
     const audioThumbnail = document.getElementById("audio-thumbnail");
 
-    if (loadRequestData.media.metadata) {
+    if (loadRequestData.media && loadRequestData.media.metadata) {
       const meta = loadRequestData.media.metadata;
       const titleText = meta.title || "In Progress...";
 
@@ -63,8 +92,8 @@ playerManager.setMessageInterceptor(
       if (audioTitle) audioTitle.textContent = titleText;
 
       // --- Album & Artiste (audio) ---
-      if (audioAlbum) audioAlbum.textContent = "Album: "+meta.albumName || "Album: unknown";
-      if (audioArtist) audioArtist.textContent = "Artist: "+meta.artist || "Artist: unknown";
+      if (audioAlbum) audioAlbum.textContent = meta.albumName ? ("Album: " + meta.albumName) : "Album: unknown";
+      if (audioArtist) audioArtist.textContent = meta.artist ? ("Artist: " + meta.artist) : "Artist: unknown";
 
       // --- Miniature ---
       let imgUrl = "assets/placeholder.png";
@@ -104,6 +133,10 @@ const audioProgressBar = document.getElementById("audio-progress-bar");
 const audioCurrentTime = document.getElementById("audio-current-time");
 const audioTotalTime = document.getElementById("audio-total-time");
 const audioPauseIcon = document.getElementById("audio-pause-icon");
+
+// Image elements (nouveau)
+const imageViewer = document.getElementById("image-viewer");
+const imageLoading = document.getElementById("image-loading");
 
 // Durées vidéo
 let currentTimeElem = document.getElementById("current-time");
@@ -166,6 +199,12 @@ function handlePlayerState(state) {
       if (pauseIcon) pauseIcon.style.display = "none";
       if (audioPauseIcon) audioPauseIcon.style.display = "none";
       audioUI.style.display = "none";
+      // si idle, masquer l'image aussi (retour écran attente)
+      if (imageViewer) {
+        imageViewer.style.opacity = '0';
+        setTimeout(()=>{ imageViewer.style.display = 'none'; }, 350);
+      }
+      if (imageLoading) imageLoading.style.display = 'none';
       break;
   }
 }
@@ -254,6 +293,122 @@ playerManager.addEventListener(
     console.log(`[Video PROGRESS] currentTime=${currentTime.toFixed(1)}s | duration=${mediaDuration.toFixed(1)}s | pct=${pct.toFixed(2)}%`);
   }
 );
+
+// ==================== NOUVEAU : Fonctions d'affichage Image / Video ====================
+/**
+ * showImage(url, next, next2)
+ * - affiche l'image full screen
+ * - précharge next / next2
+ */
+function showImage(url, next = null, next2 = null) {
+  if (!imageViewer) return;
+  if (!url) return console.warn("showImage: url manquante");
+
+  console.log("showImage ->", url);
+
+  // masquer audio / vidéo
+  if (audioUI) audioUI.style.display = 'none';
+  const player = document.getElementById("player");
+  if (player) {
+    try { player.pause(); } catch(e){}
+    player.style.display = 'none';
+  }
+
+  // afficher écran de chargement
+  if (imageLoading) imageLoading.style.display = 'block';
+
+  // préchargement principal : on utilise un Image() pour charger et mesurer
+  const img = new Image();
+  img.onload = () => {
+    // swap src only after loaded to avoid flicker
+    imageViewer.src = url;
+    imageViewer.style.display = 'block';
+    // small timeout to ensure display applied, then fade-in
+    requestAnimationFrame(() => {
+      imageViewer.style.opacity = '1';
+    });
+    // hide loading overlay
+    if (imageLoading) imageLoading.style.display = 'none';
+    console.log("Image chargée et affichée:", url);
+  };
+  img.onerror = () => {
+    console.warn("Erreur chargement image:", url);
+    if (imageLoading) imageLoading.style.display = 'none';
+  };
+  img.src = url;
+
+  // Préchargement suivant(s)
+  if (next) {
+    try { (new Image()).src = next; } catch(e) {}
+  }
+  if (next2) {
+    try { (new Image()).src = next2; } catch(e) {}
+  }
+
+  // masquer bottom-ui car image est plein écran
+  if (bottomUI) bottomUI.classList.remove("show");
+  // retirer overlay logo initial
+  const overlay = document.getElementById("overlay");
+  if (overlay) overlay.style.display = 'none';
+}
+
+/**
+ * hideImage() : cache l'image et rétablit overlay et player si besoin
+ */
+function hideImage() {
+  if (!imageViewer) return;
+  imageViewer.style.opacity = '0';
+  if (imageLoading) imageLoading.style.display = 'none';
+  setTimeout(() => {
+    try { imageViewer.style.display = 'none'; imageViewer.src = ''; } catch(e){}
+    const overlay = document.getElementById("overlay");
+    if (overlay) overlay.style.display = 'flex';
+  }, 350);
+}
+
+/**
+ * showVideo(url, title, thumbnail)
+ * - utilise ton <video id="player"> existant
+ */
+function showVideo(url, title, thumbnail) {
+  console.log("showVideo ->", url);
+
+  // masquer image
+  if (imageViewer) { imageViewer.style.opacity = '0'; setTimeout(()=>{ if (imageViewer) imageViewer.style.display = 'none'; }, 350); }
+  if (imageLoading) imageLoading.style.display = 'none';
+
+  // masquer audio
+  if (audioUI) audioUI.style.display = 'none';
+
+  const player = document.getElementById("player");
+  if (!player) {
+    console.warn("player non trouvé pour showVideo");
+    return;
+  }
+
+  // affecter la source, relancer le player
+  try {
+    player.pause();
+    player.src = url;
+    player.load();
+    player.style.display = "block";
+    player.play().catch(e => console.warn("play() rejected:", e));
+  } catch (e) {
+    console.error("Erreur lors du showVideo:", e);
+  }
+
+  // si tu veux afficher le thumbnail quelque part, tu peux utiliser le param thumbnail
+  if (thumbnail) {
+    const videoThumbnail = document.getElementById("video-thumbnail");
+    const videoThumbnailSmall = document.getElementById("video-thumbnail-small");
+    if (videoThumbnail) videoThumbnail.src = thumbnail;
+    if (videoThumbnailSmall) videoThumbnailSmall.src = thumbnail;
+  }
+
+  // retirer overlay logo initial
+  const overlay = document.getElementById("overlay");
+  if (overlay) overlay.style.display = 'none';
+}
 
 // ==================== START RECEIVER ========================
 context.start();
