@@ -281,3 +281,19 @@ body.playing #player {
 #audio-current-time { left: 0; }
 #audio-total-time { right: 0; }
 
+#image-ui {
+  display: none; /* caché par défaut */
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  justify-content: center;
+  align-items: center;
+  z-index: 12; /* entre player vidéo (10) et audio (15) */
+  background-color: black;
+}
+
+#image-display {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+

@@ -13,6 +13,25 @@ let audioCurrentTimeSec = 0;
 let audioTimer = null;
 let audioIsPlaying = false;
 
+// ==================== IMAGE NAMESPACE ====================
+const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
+const imageMessageBus = context.getCastMessageBus(
+    IMAGE_NAMESPACE,
+    cast.framework.messages.MessageType.JSON
+);
+
+imageMessageBus.onMessage = (event) => {
+    const data = event.data;
+    console.log("Message IMAGE reçu:", data);
+
+    if (data.type === 'LOAD_IMAGE') {
+        showImage(data.url);
+    } else if (data.type === 'NEXT_IMAGE') {
+        console.log("Next image demandé");
+        // Implémenter si besoin
+    }
+};
+
 // ==================== LOAD INTERCEPTOR ====================
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
@@ -105,6 +124,10 @@ const audioCurrentTime = document.getElementById("audio-current-time");
 const audioTotalTime = document.getElementById("audio-total-time");
 const audioPauseIcon = document.getElementById("audio-pause-icon");
 
+// Image
+const imageUI = document.getElementById("image-ui");
+const imageDisplay = document.getElementById("image-display");
+
 // Durées vidéo
 let currentTimeElem = document.getElementById("current-time");
 let totalTimeElem = document.getElementById("total-time");
@@ -120,6 +143,26 @@ function formatTime(sec) {
   return (h>0? h.toString().padStart(2,"0")+":" : "") + m.toString().padStart(2,"0") + ":" + s.toString().padStart(2,"0");
 }
 
+// Affiche image fullscreen
+function showImage(url) {
+    if (!imageUI || !imageDisplay) return;
+
+    imageDisplay.src = url;
+
+    // Masque audio et vidéo
+    document.getElementById("player").style.display = "none";
+    audioUI.style.display = "none";
+    bottomUI.classList.remove("show");
+    if (pauseIcon) pauseIcon.style.display = "none";
+    if (audioPauseIcon) audioPauseIcon.style.display = "none";
+
+    // Affiche image
+    imageUI.style.display = "flex";
+
+    // Marque le body comme en lecture
+    document.body.classList.add("playing");
+}
+
 // Vidéo uniquement : bottom-ui
 function showBottomUiTemporarily() {
   bottomUI.classList.add("show");
@@ -133,6 +176,9 @@ function showBottomUiTemporarily() {
 function handlePlayerState(state) {
   if (state === lastPlayerState) return;
   lastPlayerState = state;
+
+  // Masque image si lecture audio ou vidéo
+  if (imageUI) imageUI.style.display = "none";
 
   switch(state) {
     case cast.framework.ui.State.PLAYING:
