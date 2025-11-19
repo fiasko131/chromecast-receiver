@@ -89,7 +89,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     console.log("Message IMAGE reçu:", data);
 
     if (!data || !data.type) return;
-
+    console.log("data.type:", data.type);
     switch (data.type) {
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
