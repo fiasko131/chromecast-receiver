@@ -2,8 +2,8 @@
 cast.framework.CastReceiverContext.getInstance().setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
 
 // Récupère le contexte et le player
-const context = cast.framework.CastReceiverContext.getInstance();
 const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
+const context = cast.framework.CastReceiverContext.getInstance();
 const messageBus = context.getCastMessageBus(IMAGE_NAMESPACE);
 
 messageBus.onMessage = (event) => {
