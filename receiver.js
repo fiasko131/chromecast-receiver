@@ -105,7 +105,10 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           if (imageList[currentImageIndex + 1]) preloadImage(imageList[currentImageIndex + 1]);
           if (imageList[currentImageIndex + 2]) preloadImage(imageList[currentImageIndex + 2]);
           // afficher
-          showImageAtIndex(currentImageIndex);
+          //showImageAtIndex(currentImageIndex);
+          setTimeout(() => {
+            showImageAtIndex(currentImageIndex);
+          }, 50);
         } else {
           console.warn("LOAD_LIST sans urls valides");
         }
