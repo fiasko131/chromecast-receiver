@@ -13,18 +13,147 @@ let audioCurrentTimeSec = 0;
 let audioTimer = null;
 let audioIsPlaying = false;
 
-// ==================== IMAGE NAMESPACE ====================
+// ==================== IMAGE NAMESPACE & STATE ====================
 const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
-// ✅ CAF v3 : écouteur pour messages personnalisés
+
+// Liste d'URLs d'images (fournie par l'app Android via LOAD_IMAGE_LIST)
+let imageList = [];            // Array of string URLs
+let currentImageIndex = 0;     // index dans imageList
+const imageCache = {};         // url -> HTMLImageElement (preloaded)
+const PRELOAD_AHEAD = 2;       // combien d'images précharger
+
+// Helper : précharge une image et la stocke dans imageCache
+function preloadImage(url) {
+  if (!url) return;
+  if (imageCache[url] && imageCache[url].complete) return; // déjà chargé
+  const img = new Image();
+  img.onload = () => {
+    console.log("Image préchargée:", url);
+    imageCache[url] = img;
+  };
+  img.onerror = (e) => {
+    console.warn("Erreur préchargement image:", url, e);
+    // on conserve l'objet pour éviter reessayages immédiats
+    imageCache[url] = img;
+  };
+  img.src = url;
+  // stocker même si pas encore complete pour marquer tentative
+  imageCache[url] = img;
+}
+
+// Affiche l'image d'index donné (0..n-1)
+function showImageAtIndex(index) {
+  if (!Array.isArray(imageList) || imageList.length === 0) return;
+  if (index < 0) index = 0;
+  if (index >= imageList.length) index = imageList.length - 1;
+
+  currentImageIndex = index;
+  const url = imageList[currentImageIndex];
+  console.log("Affichage image index=", currentImageIndex, "url=", url);
+
+  // si l'image est préchargée, on l'utilise, sinon on met directement le src
+  if (imageCache[url] && imageCache[url].complete) {
+    // si le navigateur a préchargé, on peut utiliser le data directement
+    imageDisplay.src = url;
+  } else {
+    // fallback : assigner l'URL (le navigateur va charger)
+    imageDisplay.src = url;
+    // essayer de précharger au cas où
+    preloadImage(url);
+  }
+
+  // Masque audio/vidéo
+  if (document.getElementById("player")) document.getElementById("player").style.display = "none";
+  if (audioUI) audioUI.style.display = "none";
+  if (bottomUI) bottomUI.classList.remove("show");
+  if (pauseIcon) pauseIcon.style.display = "none";
+  if (audioPauseIcon) audioPauseIcon.style.display = "none";
+
+  // Affiche image UI
+  if (imageUI) imageUI.style.display = "flex";
+  document.body.classList.add("playing");
+
+  // précharge les suivantes
+  for (let i = 1; i <= PRELOAD_AHEAD; i++) {
+    const idx = currentImageIndex + i;
+    if (idx < imageList.length) preloadImage(imageList[idx]);
+  }
+}
+
+// Reçoit messages images (CAF v3)
 context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
+  try {
     const data = event.data;
     console.log("Message IMAGE reçu:", data);
 
-    if (data.type === 'LOAD_IMAGE') {
-        showImage(data.url);
-    } else if (data.type === 'NEXT_IMAGE') {
-        console.log("Next image demandé");
+    if (!data || !data.type) return;
+
+    switch (data.type) {
+      case 'LOAD_IMAGE_LIST':
+      case 'LOAD_LIST':
+        // data.urls : array of strings
+        // data.index : optional start index in that array
+        if (Array.isArray(data.urls)) {
+          imageList = data.urls.slice(); // clone
+          // reset cache? On garde cache existant (performances)
+          const idx = (typeof data.index === 'number' && data.index >= 0) ? data.index : 0;
+          currentImageIndex = Math.min(Math.max(0, idx), imageList.length - 1);
+          // précharge initial
+          preloadImage(imageList[currentImageIndex]);
+          if (imageList[currentImageIndex + 1]) preloadImage(imageList[currentImageIndex + 1]);
+          if (imageList[currentImageIndex + 2]) preloadImage(imageList[currentImageIndex + 2]);
+          // afficher
+          showImageAtIndex(currentImageIndex);
+        } else {
+          console.warn("LOAD_LIST sans urls valides");
+        }
+        break;
+
+      case 'SET_INDEX':
+        // data.index must be index in imageList
+        if (typeof data.index === 'number') {
+          const idxSet = Math.min(Math.max(0, data.index), imageList.length - 1);
+          showImageAtIndex(idxSet);
+        } else {
+          console.warn("SET_INDEX sans index numérique");
+        }
+        break;
+
+      case 'LOAD_IMAGE':
+        // legacy single image load
+        if (data.url) {
+          // treat as single-element list
+          imageList = [data.url];
+          currentImageIndex = 0;
+          preloadImage(data.url);
+          showImageAtIndex(0);
+        }
+        break;
+
+      case 'NEXT_IMAGE':
+        // optionally accept data.index (explicit) or increment
+        if (typeof data.index === 'number') {
+          showImageAtIndex(data.index);
+        } else {
+          showImageAtIndex(Math.min(currentImageIndex + 1, imageList.length - 1));
+        }
+        break;
+
+      case 'PREV_IMAGE':
+      case 'BEFORE_IMAGE':
+        if (typeof data.index === 'number') {
+          showImageAtIndex(data.index);
+        } else {
+          showImageAtIndex(Math.max(currentImageIndex - 1, 0));
+        }
+        break;
+
+      default:
+        console.log("Message IMAGE non géré:", data.type);
     }
+  } catch (err) {
+    console.error("Erreur traitement message image:", err);
+  }
 });
 
 // ==================== LOAD INTERCEPTOR ====================
@@ -138,24 +267,23 @@ function formatTime(sec) {
   return (h>0? h.toString().padStart(2,"0")+":" : "") + m.toString().padStart(2,"0") + ":" + s.toString().padStart(2,"0");
 }
 
-// Affiche image fullscreen
+// Affiche image fullscreen (compatibilité avec showImageAtIndex)
 function showImage(url) {
-    if (!imageUI || !imageDisplay) return;
+  // garder pour compat / legacy: affiche une image simple
+  if (!url) return;
+  if (!imageUI || !imageDisplay) return;
 
-    imageDisplay.src = url;
+  imageDisplay.src = url;
+  // Masque audio et vidéo
+  if (document.getElementById("player")) document.getElementById("player").style.display = "none";
+  if (audioUI) audioUI.style.display = "none";
+  if (bottomUI) bottomUI.classList.remove("show");
+  if (pauseIcon) pauseIcon.style.display = "none";
+  if (audioPauseIcon) audioPauseIcon.style.display = "none";
 
-    // Masque audio et vidéo
-    document.getElementById("player").style.display = "none";
-    audioUI.style.display = "none";
-    bottomUI.classList.remove("show");
-    if (pauseIcon) pauseIcon.style.display = "none";
-    if (audioPauseIcon) audioPauseIcon.style.display = "none";
-
-    // Affiche image
-    imageUI.style.display = "flex";
-
-    // Marque le body comme en lecture
-    document.body.classList.add("playing");
+  // Affiche image
+  imageUI.style.display = "flex";
+  document.body.classList.add("playing");
 }
 
 // Vidéo uniquement : bottom-ui
