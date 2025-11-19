@@ -3,7 +3,7 @@ cast.framework.CastReceiverContext.getInstance().setLoggerLevel(cast.framework.L
 
 // Récupère le contexte et le player
 const context = cast.framework.CastReceiverContext.getInstance();
-const messageBus = context.getCastMessageBus(namespace);
+const messageBus = context.getCastMessageBus(IMAGE_NAMESPACE);
 
 messageBus.onMessage = (event) => {
   console.log('[WiZU RECEIVER] Message reçu = ', event.data);
