@@ -2,14 +2,7 @@
 cast.framework.CastReceiverContext.getInstance().setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
 
 // Récupère le contexte et le player
-const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
 const context = cast.framework.CastReceiverContext.getInstance();
-const messageBus = context.getCastMessageBus(IMAGE_NAMESPACE);
-
-messageBus.onMessage = (event) => {
-  console.log('[WiZU RECEIVER] Message reçu = ', event.data);
-};
-
 const playerManager = context.getPlayerManager();
 
 let mediaDuration = 0;                // durée du média en secondes
@@ -23,7 +16,7 @@ let audioTimer = null;
 let audioIsPlaying = false;
 
 // ==================== IMAGE NAMESPACE & STATE ====================
-
+const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
 
 // Liste d'URLs d'images (fournie par l'app Android via LOAD_IMAGE_LIST)
 let imageList = [];            // Array of string URLs
