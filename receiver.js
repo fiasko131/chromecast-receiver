@@ -3,6 +3,12 @@ cast.framework.CastReceiverContext.getInstance().setLoggerLevel(cast.framework.L
 
 // Récupère le contexte et le player
 const context = cast.framework.CastReceiverContext.getInstance();
+const messageBus = context.getCastMessageBus(namespace);
+
+messageBus.onMessage = (event) => {
+  console.log('[WiZU RECEIVER] Message reçu = ', event.data);
+};
+
 const playerManager = context.getPlayerManager();
 
 let mediaDuration = 0;                // durée du média en secondes
