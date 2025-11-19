@@ -3,6 +3,7 @@ cast.framework.CastReceiverContext.getInstance().setLoggerLevel(cast.framework.L
 
 // Récupère le contexte et le player
 const context = cast.framework.CastReceiverContext.getInstance();
+const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
 const messageBus = context.getCastMessageBus(IMAGE_NAMESPACE);
 
 messageBus.onMessage = (event) => {
@@ -22,7 +23,7 @@ let audioTimer = null;
 let audioIsPlaying = false;
 
 // ==================== IMAGE NAMESPACE & STATE ====================
-const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
+
 
 // Liste d'URLs d'images (fournie par l'app Android via LOAD_IMAGE_LIST)
 let imageList = [];            // Array of string URLs
