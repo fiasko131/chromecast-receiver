@@ -502,6 +502,11 @@ try {
     cast.framework.ui.PlayerDataEventType.STATE_CHANGED,
     (e) => {
       console.log("PlayerData.STATE_CHANGED:", e.value);
+      console.log("displayingManualImage: ", "value "+displayingManualImage);
+      if (displayingManualImage && e.value === cast.framework.ui.State.IDLE) {
+        setTimeout(() => handlePlayerState(e.value), 100);
+        return;
+      }
       handlePlayerState(e.value);
     }
   );
