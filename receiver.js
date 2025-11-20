@@ -230,7 +230,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       case 'LOAD_LIST':
         // data.urls : array of strings
         // data.index : optional start index in that array
-        if (Array.isArray(data.urls)) {
+        /*if (Array.isArray(data.urls)) {
           imageList = data.urls.slice(); // clone
           // reset cache? On garde cache existant (performances)
           const idx = (typeof data.index === 'number' && data.index >= 0) ? data.index : 0;
@@ -248,6 +248,29 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
               showImageAtIndex(currentImageIndex);
           }
 
+        } else {
+          console.warn("LOAD_LIST sans urls valides");
+        }
+        break;*/
+        if (Array.isArray(data.urls)) {
+          imageList = data.urls.slice(); // clone
+          // Déterminer l'index de départ
+          const startIndex = (typeof data.index === 'number' && data.index >= 0) 
+                            ? Math.min(Math.max(0, data.index), imageList.length - 1)
+                            : 0;
+          currentImageIndex = startIndex;
+
+          // préchargement initial
+          preloadImage(imageList[currentImageIndex]);
+          if (imageList[currentImageIndex + 1]) preloadImage(imageList[currentImageIndex + 1]);
+          if (imageList[currentImageIndex + 2]) preloadImage(imageList[currentImageIndex + 2]);
+
+          // afficher la première image
+          if (!firstImageShown && imageList.length > 0) {
+              displayFirstImage(imageList[currentImageIndex]);
+          } else {
+              showImageAtIndex(currentImageIndex);
+          }
         } else {
           console.warn("LOAD_LIST sans urls valides");
         }
