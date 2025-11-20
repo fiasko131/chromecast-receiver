@@ -20,18 +20,38 @@ let audioIsPlaying = false;
 const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
 
 // Liste d'URLs d'images (fournie par l'app Android via LOAD_IMAGE_LIST)
+// NOTE : ce tableau devient mixte (images, videos, audio); on garde le nom imageList pour compatibilité
 let imageList = [];            // Array of string URLs
 let currentImageIndex = 0;     // index dans imageList
-const imageCache = {};         // url -> HTMLImageElement (preloaded)
+const imageCache = {};         // url -> HTMLImageElement or VideoElement (preloaded)
 const PRELOAD_AHEAD = 2;       // combien d'images précharger
 // mode manuel d'affichage d'images : si true on ignore certains changements d'état player
 let displayingManualImage = false;
+let displayingManualVideo = false; // nouveau flag pour video gérée manuellement
 let firstImageShown = false;
 
+// -------------------- Helpers type de média --------------------
+// Détection par suffixe/url comme demandé : /v pour vidéo, /a pour audio
+function isVideoUrl(url) {
+  return url && url.indexOf("/v") !== -1;
+}
+function isAudioUrl(url) {
+  return url && url.indexOf("/a") !== -1;
+}
+function isImageUrl(url) {
+  return url && !isVideoUrl(url) && !isAudioUrl(url);
+}
+
+// -------------------- Préchargement --------------------
 // Helper : précharge une image et la stocke dans imageCache
 function preloadImage(url) {
   if (!url) return;
-  if (imageCache[url] && imageCache[url].complete) return; // déjà chargé
+  if (imageCache[url] && imageCache[url].complete) return; // déjà chargé (pour image)
+  // Si c'est une vidéo, utiliser preloadVideo (voir plus bas)
+  if (isVideoUrl(url)) {
+    preloadVideo(url);
+    return;
+  }
   const img = new Image();
   img.onload = () => {
     console.log("Image préchargée:", url);
@@ -47,7 +67,28 @@ function preloadImage(url) {
   imageCache[url] = img;
 }
 
+// préchargement vidéo minimal : crée un element <video> en mémoire et preload metadata
+function preloadVideo(url) {
+  if (!url) return;
+  if (imageCache[url]) return; // marqueur déjà
+  try {
+    const v = document.createElement('video');
+    v.preload = "metadata";
+    v.src = url;
+    // on ne l'ajoute pas au DOM, on le garde en cache pour marquer préchargement
+    imageCache[url] = v;
+    v.onloadedmetadata = () => {
+      console.log("Video préchargée metadata:", url);
+    };
+    v.onerror = (e) => {
+      console.warn("Erreur préchargement video:", url, e);
+    };
+  } catch (e) {
+    console.warn("Preload video non supporté :", e);
+  }
+}
 
+// -------------------- Affichage (image) --------------------
 function showImageAtIndex(index) {
   if (!Array.isArray(imageList) || imageList.length === 0) return;
   if (index < 0) index = 0;
@@ -73,19 +114,27 @@ function showImageAtIndex(index) {
     startDisplay();
   }
 
-  // précharge les images suivantes
+  // précharge les images / videos suivantes
   for (let i = 1; i <= PRELOAD_AHEAD; i++) {
     const idx = currentImageIndex + i;
-    if (idx < imageList.length) preloadImage(imageList[idx]);
+    if (idx < imageList.length) {
+      const nextUrl = imageList[idx];
+      if (isVideoUrl(nextUrl)) preloadVideo(nextUrl);
+      else preloadImage(nextUrl);
+    }
   }
 }
 
-// charge + affiche en garantissant le rendu
+// charge + affiche en garantissant le rendu (images)
 function preloadAndShow(url) {
   const img = new Image();
   img.onload = () => {
     imageCache[url] = img;
     displayImage(url);
+  };
+  img.onerror = (e) => {
+    console.warn("preloadAndShow failed:", url, e);
+    displayImage(url); // tenter quand même (affichera erreur si corrompu)
   };
   img.src = url;
 }
@@ -96,7 +145,9 @@ function displayImage(url) {
 
   // Indique qu'on est en mode affichage manuel d'image
   displayingManualImage = true;
+  displayingManualVideo = false;
 
+  // Met à jour l'élément image
   imageDisplay.src = url;
 
   // Sécurité première image : empêche UI hidden trop tôt
@@ -118,10 +169,118 @@ function displayImage(url) {
   if (bottomUI) bottomUI.classList.remove("show");
 }
 
+// -------------------- VIDEO / AUDIO manuel via <video id="player"> --------------------
+// Arrête et nettoie le player manuel si on en avait un
+function stopManualVideoIfAny() {
+  const v = document.getElementById("player");
+  if (v) {
+    try { v.pause(); } catch (e) { /* ignore */ }
+    try { v.removeAttribute('src'); v.load(); } catch (e) { /* ignore */ }
+    v.style.display = "none";
+  }
+  displayingManualVideo = false;
+}
 
+// Fonction qui affiche une vidéo (utilise ton <video id="player">)
+// Ce comportement lit la vidéo localement (par ton nano server) sans dépendre d'un LOAD CAF
+function showVideoAtIndex(index) {
+  if (!Array.isArray(imageList) || imageList.length === 0) return;
+  if (index < 0) index = 0;
+  if (index >= imageList.length) index = imageList.length - 1;
 
+  currentImageIndex = index;
+  const url = imageList[currentImageIndex];
+  console.log("[RECEIVER] Affichage VIDEO index=", index, "url=", url);
 
-// Reçoit messages images (CAF v3)
+  // Mode manuel vidéo
+  displayingManualVideo = true;
+  displayingManualImage = false;
+
+  // Masquer image et audio UI
+  if (imageUI) imageUI.style.display = "none";
+  if (audioUI) audioUI.style.display = "none";
+
+  const v = document.getElementById("player");
+  if (!v) {
+    console.error("player element introuvable");
+    return;
+  }
+
+  // reset
+  try { v.pause(); } catch(e){}
+  try { v.removeAttribute('src'); v.load(); } catch(e){}
+
+  // config
+  v.preload = "auto"; // on souhaite un démarrage rapide
+  v.src = url;
+  v.style.display = "block";
+  document.body.classList.add("playing");
+  if (bottomUI) bottomUI.classList.add("show");
+
+  // events
+  v.onplay = () => {
+    console.log("[RECEIVER] video onplay");
+    if (pauseIcon) pauseIcon.style.display = "none";
+    isAudioContent = false;
+  };
+  v.onpause = () => {
+    console.log("[RECEIVER] video onpause");
+    if (pauseIcon) pauseIcon.style.display = "block";
+  };
+  v.ondurationchange = () => {
+    mediaDuration = v.duration || 0;
+    if (totalTimeElem) totalTimeElem.textContent = formatTime(mediaDuration);
+  };
+  v.ontimeupdate = () => {
+    if (!mediaDuration || mediaDuration <= 0) {
+      // tenter d'initialiser si non set
+      if (v.duration && v.duration > 0) mediaDuration = v.duration;
+      else return;
+    }
+    const pct = (v.currentTime / mediaDuration) * 100;
+    if (progressBar) progressBar.style.width = pct + "%";
+    if (currentTimeElem) currentTimeElem.textContent = formatTime(v.currentTime);
+  };
+  v.onended = () => {
+    console.log("[RECEIVER] video ended");
+    if (bottomUI) bottomUI.classList.remove("show");
+    displayingManualVideo = false;
+  };
+
+  // tentative autoplay
+  v.play().catch((err) => {
+    console.warn("Auto-play échoué:", err);
+  });
+}
+
+// Option pour audio si souhaité (placeholder simple)
+function showAudioAtIndex(index) {
+  currentImageIndex = index;
+  const url = imageList[currentImageIndex];
+  console.log("[RECEIVER] Affichage AUDIO index=", index, "url=", url);
+
+  // Ici on choisit une implémentation simple : utiliser playerManager.load si on veut
+  // permettre au cast standard d'afficher la UI audio (metadata, contrôle remote).
+  // On peut aussi implémenter <audio> local similaire à <video>.
+  try {
+    // Construire un LoadRequestData pour déléguer au CAF
+    const mediaInfo = new cast.framework.messages.MediaInformation();
+    mediaInfo.contentId = url;
+    mediaInfo.contentType = "audio/mpeg";
+    mediaInfo.streamType = "BUFFERED";
+    const req = new cast.framework.messages.LoadRequestData();
+    req.media = mediaInfo;
+    // Laisser CAF gérer l'audio (UI audio existante)
+    playerManager.load(req);
+  } catch (e) {
+    console.error("Erreur lancement audio via CAF :", e);
+    // fallback : afficher audio UI statique
+    if (audioUI) audioUI.style.display = "flex";
+    document.body.classList.add("playing");
+  }
+}
+
+// ==================== Reçoit messages images / playlist (CAF v3) ====================
 context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
   try {
     const data = event.data;
@@ -132,7 +291,6 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     switch (data.type) {
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
-        
         if (Array.isArray(data.urls)) {
           imageList = data.urls.slice(); // clone
           // Déterminer l'index de départ
@@ -142,16 +300,38 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           currentImageIndex = startIndex;
           console.log("[RECEIVER] index ", "data.index "+data.index+ " currentImageIndex "+currentImageIndex);
 
-          // préchargement initial
-          preloadImage(imageList[currentImageIndex]);
-          if (imageList[currentImageIndex + 1]) preloadImage(imageList[currentImageIndex + 1]);
-          if (imageList[currentImageIndex + 2]) preloadImage(imageList[currentImageIndex + 2]);
+          // préchargement initial (mix images/videos)
+          const firstUrl = imageList[currentImageIndex];
+          if (isVideoUrl(firstUrl)) preloadVideo(firstUrl); else preloadImage(firstUrl);
 
-          // afficher la première image
+          if (imageList[currentImageIndex + 1]) {
+            const u1 = imageList[currentImageIndex + 1];
+            if (isVideoUrl(u1)) preloadVideo(u1); else preloadImage(u1);
+          }
+          if (imageList[currentImageIndex + 2]) {
+            const u2 = imageList[currentImageIndex + 2];
+            if (isVideoUrl(u2)) preloadVideo(u2); else preloadImage(u2);
+          }
+
+          // afficher la première image / video
           if (!firstImageShown && imageList.length > 0) {
-              displayFirstImage(imageList[currentImageIndex]);
+              // si première est une image -> displayFirstImage (garde la logique existante)
+              const first = imageList[currentImageIndex];
+              if (isImageUrl(first)) {
+                displayFirstImage(first);
+              } else if (isVideoUrl(first)) {
+                // si première est une vidéo : afficher directement via showVideoAtIndex
+                showVideoAtIndex(currentImageIndex);
+                firstImageShown = true;
+              } else if (isAudioUrl(first)) {
+                showAudioAtIndex(currentImageIndex);
+                firstImageShown = true;
+              }
           } else {
-              showImageAtIndex(currentImageIndex);
+              // show selon type
+              const cur = imageList[currentImageIndex];
+              if (isVideoUrl(cur)) showVideoAtIndex(currentImageIndex);
+              else showImageAtIndex(currentImageIndex);
           }
         } else {
           console.warn("LOAD_LIST sans urls valides");
@@ -162,7 +342,15 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         // data.index must be index in imageList
         if (typeof data.index === 'number') {
           const idxSet = Math.min(Math.max(0, data.index), imageList.length - 1);
-          showImageAtIndex(idxSet);
+          // Router selon type : image / video / audio
+          const urlToShow = imageList[idxSet];
+          if (isVideoUrl(urlToShow)) {
+            showVideoAtIndex(idxSet);
+          } else if (isAudioUrl(urlToShow)) {
+            showAudioAtIndex(idxSet);
+          } else {
+            showImageAtIndex(idxSet);
+          }
         } else {
           console.warn("SET_INDEX sans index numérique");
         }
@@ -182,18 +370,26 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       case 'NEXT_IMAGE':
         // optionally accept data.index (explicit) or increment
         if (typeof data.index === 'number') {
-          showImageAtIndex(data.index);
+          const idx = Math.min(Math.max(0,data.index), imageList.length - 1);
+          const urlN = imageList[idx];
+          if (isVideoUrl(urlN)) showVideoAtIndex(idx); else showImageAtIndex(idx);
         } else {
-          showImageAtIndex(Math.min(currentImageIndex + 1, imageList.length - 1));
+          const nextIdx = Math.min(currentImageIndex + 1, imageList.length - 1);
+          const urlN = imageList[nextIdx];
+          if (isVideoUrl(urlN)) showVideoAtIndex(nextIdx); else showImageAtIndex(nextIdx);
         }
         break;
 
       case 'PREV_IMAGE':
       case 'BEFORE_IMAGE':
         if (typeof data.index === 'number') {
-          showImageAtIndex(data.index);
+          const idxP = Math.min(Math.max(0, data.index), imageList.length - 1);
+          const urlP = imageList[idxP];
+          if (isVideoUrl(urlP)) showVideoAtIndex(idxP); else showImageAtIndex(idxP);
         } else {
-          showImageAtIndex(Math.max(currentImageIndex - 1, 0));
+          const prevIdx = Math.max(currentImageIndex - 1, 0);
+          const urlP = imageList[prevIdx];
+          if (isVideoUrl(urlP)) showVideoAtIndex(prevIdx); else showImageAtIndex(prevIdx);
         }
         break;
 
@@ -205,6 +401,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
   }
 });
 
+// -------------------- displayFirstImage existante (inchangée, juste compatible) --------------------
 function displayFirstImage(url) {
     // 1️⃣ Crée un média factice pour bloquer le retour au launcher
     const mediaInfo = new cast.framework.messages.MediaInformation();
@@ -222,11 +419,13 @@ function displayFirstImage(url) {
     playerManager.setMessageInterceptor(
         cast.framework.messages.MessageType.LOAD,
         (msg) => {
-            if (msg.media && msg.media.contentType.startsWith("image/")) {
+            if (msg.media && msg.media.contentType && msg.media.contentType.startsWith("image/")) {
                 console.log("[RECEIVER] IMAGE interceptée, lecture manuelle");
                 // on ignore la lecture réelle → juste rester sur receiver
                 return null;
             }
+            // si ce n'est pas une image, on arrête le player manuel (video/audio) pour laisser CAF gérer
+            stopManualVideoIfAny();
             return msg;
         }
     );
@@ -239,8 +438,9 @@ function displayFirstImage(url) {
     displayingManualImage = true; // flag pour gérer IDLE
 }
 
-
 // ==================== LOAD INTERCEPTOR ====================
+// Cet interceptor reste : il collecte les metadata des LOAD CAF et permet au cast classique de fonctionner.
+// On y ajoute un stop du player manuel si le LOAD n'est pas une image (pour éviter conflit)
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   loadRequestData => {
@@ -312,6 +512,14 @@ playerManager.setMessageInterceptor(
       if (audioAlbum) audioAlbum.textContent = "Album inconnu";
       if (audioArtist) audioArtist.textContent = "Artiste inconnu";
       if (audioThumbnail) audioThumbnail.src = "assets/placeholder.png";
+    }
+
+    // Si le LOAD CAF est pour une vraie vidéo/audio, arrêter notre lecteur manuel si actif
+    const contentType = (loadRequestData.media && loadRequestData.media.contentType) ? loadRequestData.media.contentType : "";
+    if (contentType && !contentType.startsWith("image/")) {
+      stopManualVideoIfAny();
+      // vider la playlist custom pour éviter conflits si besoin
+      // imageList = []; // on garde la liste, à toi de décider si tu veux la vider
     }
 
     return loadRequestData;
@@ -395,6 +603,17 @@ function handlePlayerState(state) {
   if (state === lastPlayerState) return;
   lastPlayerState = state;
 
+  // Si on affiche manuellement une image, on ignore certains IDLE envoyés par CAF
+  if (displayingManualImage && state === cast.framework.ui.State.IDLE) {
+    console.log("[RECEIVER] Ignorer IDLE pour image manuelle");
+    return;
+  }
+  // Si on affiche manuellement une video via notre <video>, on ignore aussi certains états CAF
+  if (displayingManualVideo && (state === cast.framework.ui.State.IDLE || state === cast.framework.ui.State.LAUNCHING)) {
+    console.log("[RECEIVER] Ignorer state CAF car affichage manuel video");
+    return;
+  }
+
   // Masque image si lecture audio ou vidéo
   if (imageUI) imageUI.style.display = "none";
 
@@ -427,8 +646,8 @@ function handlePlayerState(state) {
     case cast.framework.ui.State.IDLE:
     case cast.framework.ui.State.LAUNCHING:
       if (displayingManualImage) {
-      console.log("[RECEIVER] Ignorer IDLE pour image manuelle");
-      break;
+        console.log("[RECEIVER] Ignorer IDLE pour image manuelle");
+        break;
       }
       document.body.classList.remove("playing");
       if (bottomUI) bottomUI.classList.remove("show");
