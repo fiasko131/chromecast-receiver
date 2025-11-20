@@ -44,7 +44,7 @@ function preloadImage(url) {
 }
 
 // Affiche l'image d'index donné (0..n-1)
-function showImageAtIndex(index) {
+/*function showImageAtIndex(index) {
   if (!Array.isArray(imageList) || imageList.length === 0) return;
   if (index < 0) index = 0;
   if (index >= imageList.length) index = imageList.length - 1;
@@ -80,7 +80,53 @@ function showImageAtIndex(index) {
     const idx = currentImageIndex + i;
     if (idx < imageList.length) preloadImage(imageList[idx]);
   }
+}*/
+function showImageAtIndex(index) {
+    if (!Array.isArray(imageList) || imageList.length === 0) return;
+    if (index < 0) index = 0;
+    if (index >= imageList.length) index = imageList.length - 1;
+
+    currentImageIndex = index;
+    const url = imageList[currentImageIndex];
+    console.log("Affichage image index=", currentImageIndex, "url=", url);
+
+    // Masque audio/vidéo immédiatement
+    if (document.getElementById("player")) document.getElementById("player").style.display = "none";
+    if (audioUI) audioUI.style.display = "none";
+    if (bottomUI) bottomUI.classList.remove("show");
+    if (pauseIcon) pauseIcon.style.display = "none";
+    if (audioPauseIcon) audioPauseIcon.style.display = "none";
+
+    // Affichage de l'image : si déjà préchargée et complète, on affiche immédiatement
+    if (imageCache[url] && imageCache[url].complete) {
+        imageDisplay.src = url;
+        if (imageUI) imageUI.style.display = "flex";
+        document.body.classList.add("playing");
+    } else {
+        // Sinon, crée une Image temporaire et attend le chargement
+        const tempImg = new Image();
+        tempImg.onload = () => {
+            console.log("Image prête à l'affichage:", url);
+            imageDisplay.src = url;
+            if (imageUI) imageUI.style.display = "flex";
+            document.body.classList.add("playing");
+        };
+        tempImg.onerror = (e) => {
+            console.warn("Erreur chargement image pour affichage:", url, e);
+        };
+        tempImg.src = url;
+
+        // Stocke quand même dans le cache pour préchargement
+        imageCache[url] = tempImg;
+    }
+
+    // Précharge les images suivantes
+    for (let i = 1; i <= PRELOAD_AHEAD; i++) {
+        const idx = currentImageIndex + i;
+        if (idx < imageList.length) preloadImage(imageList[idx]);
+    }
 }
+
 
 // Reçoit messages images (CAF v3)
 context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
