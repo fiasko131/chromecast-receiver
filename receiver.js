@@ -182,6 +182,14 @@ function displayImage(url) {
     imageUI.style.display = "flex";
     document.body.classList.add("playing");
     firstImageShown = true;
+     // ➕ AJOUTER ICI : empêcher retour Idle du Chromecast
+    // ➕ AJOUTER CETTE PARTIE UNIQUEMENT (ne pas redéclarer les constantes)
+    context.setApplicationState("Displaying photos...");
+    playerManager.setMediaPlaybackInfo({
+        contentType: "image/webp",
+        state: cast.framework.ui.PlayerData.PlaybackState.PLAYING
+    });
+
   } else {
     // images suivantes : logique normale
     imageUI.style.display = "flex";
