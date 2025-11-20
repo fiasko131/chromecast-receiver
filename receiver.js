@@ -259,6 +259,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
                             ? Math.min(Math.max(0, data.index), imageList.length - 1)
                             : 0;
           currentImageIndex = startIndex;
+          console.log("[RECEIVER] index ", "data.index "+data.index+ " currentImageIndex "+currentImageIndex);
 
           // préchargement initial
           preloadImage(imageList[currentImageIndex]);
