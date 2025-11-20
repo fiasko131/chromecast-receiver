@@ -4,18 +4,7 @@ cast.framework.CastReceiverContext.getInstance().setLoggerLevel(cast.framework.L
 // Récupère le contexte et le player
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
-// 🚫 Empêche le PlayerManager d'essayer de lire les images (sinon IDLE → écran d'accueil)
-/*playerManager.setMessageInterceptor(
-  cast.framework.messages.MessageType.LOAD,
-  message => {
-      if (message.media && message.media.contentType 
-          && message.media.contentType.startsWith("image/")) {
-          console.log("[RECEIVER] Intercepteur: image => gestion manuelle");
-          return null; // on bloque le PlayerManager pour les images
-      }
-      return message; // vidéo/audio continue normalement
-  }
-);*/
+
 
 let mediaDuration = 0;                // durée du média en secondes
 let hideProgressTimeout = null;       // timer pour cacher bottom-ui (vidéo)
@@ -57,91 +46,6 @@ function preloadImage(url) {
   // stocker même si pas encore complete pour marquer tentative
   imageCache[url] = img;
 }
-
-// Affiche l'image d'index donné (0..n-1)
-/*function showImageAtIndex(index) {
-  if (!Array.isArray(imageList) || imageList.length === 0) return;
-  if (index < 0) index = 0;
-  if (index >= imageList.length) index = imageList.length - 1;
-
-  currentImageIndex = index;
-  const url = imageList[currentImageIndex];
-  console.log("Affichage image index=", currentImageIndex, "url=", url);
-
-  // si l'image est préchargée, on l'utilise, sinon on met directement le src
-  if (imageCache[url] && imageCache[url].complete) {
-    // si le navigateur a préchargé, on peut utiliser le data directement
-    imageDisplay.src = url;
-  } else {
-    // fallback : assigner l'URL (le navigateur va charger)
-    imageDisplay.src = url;
-    // essayer de précharger au cas où
-    preloadImage(url);
-  }
-
-  // Masque audio/vidéo
-  if (document.getElementById("player")) document.getElementById("player").style.display = "none";
-  if (audioUI) audioUI.style.display = "none";
-  if (bottomUI) bottomUI.classList.remove("show");
-  if (pauseIcon) pauseIcon.style.display = "none";
-  if (audioPauseIcon) audioPauseIcon.style.display = "none";
-
-  // Affiche image UI
-  if (imageUI) imageUI.style.display = "flex";
-  document.body.classList.add("playing");
-
-  // précharge les suivantes
-  for (let i = 1; i <= PRELOAD_AHEAD; i++) {
-    const idx = currentImageIndex + i;
-    if (idx < imageList.length) preloadImage(imageList[idx]);
-  }
-}*/
-/*function showImageAtIndex(index) {
-    if (!Array.isArray(imageList) || imageList.length === 0) return;
-    if (index < 0) index = 0;
-    if (index >= imageList.length) index = imageList.length - 1;
-
-    currentImageIndex = index;
-    const url = imageList[currentImageIndex];
-    console.log("Affichage image index=", currentImageIndex, "url=", url);
-
-    // Masque audio/vidéo immédiatement
-    if (document.getElementById("player")) document.getElementById("player").style.display = "none";
-    if (audioUI) audioUI.style.display = "none";
-    if (bottomUI) bottomUI.classList.remove("show");
-    if (pauseIcon) pauseIcon.style.display = "none";
-    if (audioPauseIcon) audioPauseIcon.style.display = "none";
-
-    // Affichage de l'image : si déjà préchargée et complète, on affiche immédiatement
-    if (imageCache[url] && imageCache[url].complete) {
-        imageDisplay.src = url;
-        if (imageUI) imageUI.style.display = "flex";
-        document.body.classList.add("playing");
-    } else {
-        // Sinon, crée une Image temporaire et attend le chargement
-        const tempImg = new Image();
-        tempImg.onload = () => {
-            console.log("Image prête à l'affichage:", url);
-            imageDisplay.src = url;
-            if (imageUI) imageUI.style.display = "flex";
-            document.body.classList.add("playing");
-        };
-        tempImg.onerror = (e) => {
-            console.warn("Erreur chargement image pour affichage:", url, e);
-        };
-        tempImg.src = url;
-
-        // Stocke quand même dans le cache pour préchargement
-        imageCache[url] = tempImg;
-    }
-
-    // Précharge les images suivantes
-    for (let i = 1; i <= PRELOAD_AHEAD; i++) {
-        const idx = currentImageIndex + i;
-        if (idx < imageList.length) preloadImage(imageList[idx]);
-    }
-}*/
-
 
 
 function showImageAtIndex(index) {
@@ -228,30 +132,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     switch (data.type) {
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
-        // data.urls : array of strings
-        // data.index : optional start index in that array
-        /*if (Array.isArray(data.urls)) {
-          imageList = data.urls.slice(); // clone
-          // reset cache? On garde cache existant (performances)
-          const idx = (typeof data.index === 'number' && data.index >= 0) ? data.index : 0;
-          currentImageIndex = Math.min(Math.max(0, idx), imageList.length - 1);
-          // précharge initial
-          preloadImage(imageList[currentImageIndex]);
-          if (imageList[currentImageIndex + 1]) preloadImage(imageList[currentImageIndex + 1]);
-          if (imageList[currentImageIndex + 2]) preloadImage(imageList[currentImageIndex + 2]);
-          // afficher
-          if (!firstImageShown && imageList.length > 0) {
-              const url = imageList[currentImageIndex];
-               console.log("[RECEIVER] Affichage index=", currentImageIndex, "url=", url);
-                displayFirstImage(url);
-          } else {
-              showImageAtIndex(currentImageIndex);
-          }
-
-        } else {
-          console.warn("LOAD_LIST sans urls valides");
-        }
-        break;*/
+        
         if (Array.isArray(data.urls)) {
           imageList = data.urls.slice(); // clone
           // Déterminer l'index de départ
