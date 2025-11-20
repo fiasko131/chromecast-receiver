@@ -37,6 +37,7 @@ const imageCache = {};         // url -> HTMLImageElement (preloaded)
 const PRELOAD_AHEAD = 2;       // combien d'images précharger
 // mode manuel d'affichage d'images : si true on ignore certains changements d'état player
 let displayingManualImage = false;
+let firstImageShown = false;
 
 // Helper : précharge une image et la stocke dans imageCache
 function preloadImage(url) {
@@ -141,7 +142,7 @@ function preloadImage(url) {
     }
 }*/
 
-let firstImageShown = false;
+
 
 function showImageAtIndex(index) {
   if (!Array.isArray(imageList) || imageList.length === 0) return;
@@ -239,10 +240,12 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           if (imageList[currentImageIndex + 1]) preloadImage(imageList[currentImageIndex + 1]);
           if (imageList[currentImageIndex + 2]) preloadImage(imageList[currentImageIndex + 2]);
           // afficher
-          //showImageAtIndex(currentImageIndex);
-          setTimeout(() => {
-            showImageAtIndex(currentImageIndex);
-          }, 50);
+          if (!firstImageShown && imageList.length > 0) {
+                displayFirstImage(imageList[currentImageIndex]);
+          } else {
+              showImageAtIndex(currentImageIndex);
+          }
+
         } else {
           console.warn("LOAD_LIST sans urls valides");
         }
@@ -294,6 +297,41 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     console.error("Erreur traitement message image:", err);
   }
 });
+
+function displayFirstImage(url) {
+    // 1️⃣ Crée un média factice pour bloquer le retour au launcher
+    const mediaInfo = new cast.framework.messages.MediaInformation();
+    mediaInfo.contentId = url;                // ton URL ou base64
+    mediaInfo.contentType = "image/webp";     // type MIME
+    mediaInfo.streamType = "BUFFERED";
+    mediaInfo.metadata = new cast.framework.messages.GenericMediaMetadata();
+    mediaInfo.metadata.title = "Image";
+
+    const request = new cast.framework.messages.LoadRequestData();
+    request.autoplay = false; // pas de lecture réelle
+    request.media = mediaInfo;
+
+    // 2️⃣ Intercepte le playerManager pour ne pas “jouer” l’image
+    playerManager.setMessageInterceptor(
+        cast.framework.messages.MessageType.LOAD,
+        (msg) => {
+            if (msg.media && msg.media.contentType.startsWith("image/")) {
+                console.log("[RECEIVER] IMAGE interceptée, lecture manuelle");
+                // on ignore la lecture réelle → juste rester sur receiver
+                return null;
+            }
+            return msg;
+        }
+    );
+
+    // 3️⃣ Affiche manuellement la première image dans le DOM
+    imageDisplay.src = url;
+    imageUI.style.display = "flex";
+    document.body.classList.add("playing");
+    firstImageShown = true;
+    displayingManualImage = true; // flag pour gérer IDLE
+}
+
 
 // ==================== LOAD INTERCEPTOR ====================
 playerManager.setMessageInterceptor(
