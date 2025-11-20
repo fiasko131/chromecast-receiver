@@ -446,6 +446,7 @@ function showBottomUiTemporarily() {
 
 // ==================== PLAYER STATE ====================
 function handlePlayerState(state) {
+  console.log("[RECEIVER] handlePlayerState "+state);
   if (state === lastPlayerState) return;
   lastPlayerState = state;
 
