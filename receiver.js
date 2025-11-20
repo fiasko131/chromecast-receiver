@@ -241,8 +241,9 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           if (imageList[currentImageIndex + 2]) preloadImage(imageList[currentImageIndex + 2]);
           // afficher
           if (!firstImageShown && imageList.length > 0) {
-               console.log("[RECEIVER] Affichage index=", index, "url=", url);
-                displayFirstImage(imageList[currentImageIndex]);
+              const url = imageList[currentImageIndex];
+               console.log("[RECEIVER] Affichage index=", currentImageIndex, "url=", url);
+                displayFirstImage(url);
           } else {
               showImageAtIndex(currentImageIndex);
           }
