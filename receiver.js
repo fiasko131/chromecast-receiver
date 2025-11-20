@@ -372,6 +372,16 @@ const audioPauseIcon = document.getElementById("audio-pause-icon");
 // Image
 const imageUI = document.getElementById("image-ui");
 const imageDisplay = document.getElementById("image-display");
+imageDisplay.onerror = (e) => {
+  console.error("❌ ERREUR CHARGEMENT IMAGE:", imageList[currentImageIndex], e);
+  imageDisplay.src = "";       // vide pour éviter boucle
+  imageDisplay.style.background = "#111";  // indication visuelle
+};
+
+// 🎉 Handler de succès UNE SEULE FOIS
+imageDisplay.onload = () => {
+  console.log("✅ IMAGE CHARGÉE OK:", imageList[currentImageIndex]);
+};
 
 // Durées vidéo
 let currentTimeElem = document.getElementById("current-time");
@@ -547,3 +557,9 @@ playerManager.addEventListener(
 
 // ==================== START RECEIVER ========================
 context.start();
+context.addEventListener(cast.framework.system.EventType.SYSTEM_STATE_CHANGED, (event) => {
+  console.warn("⚠️ SYSTEM STATE:", event.state);
+  if (event.state === cast.framework.system.SystemState.IDLE) {
+    console.error("🚨 Retour au logo détecté !");
+  }
+});
