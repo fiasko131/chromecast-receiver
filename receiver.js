@@ -5,7 +5,7 @@ cast.framework.CastReceiverContext.getInstance().setLoggerLevel(cast.framework.L
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 // 🚫 Empêche le PlayerManager d'essayer de lire les images (sinon IDLE → écran d'accueil)
-playerManager.setMessageInterceptor(
+/*playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   message => {
       if (message.media && message.media.contentType 
@@ -15,7 +15,7 @@ playerManager.setMessageInterceptor(
       }
       return message; // vidéo/audio continue normalement
   }
-);
+);*/
 
 let mediaDuration = 0;                // durée du média en secondes
 let hideProgressTimeout = null;       // timer pour cacher bottom-ui (vidéo)
@@ -35,6 +35,8 @@ let imageList = [];            // Array of string URLs
 let currentImageIndex = 0;     // index dans imageList
 const imageCache = {};         // url -> HTMLImageElement (preloaded)
 const PRELOAD_AHEAD = 2;       // combien d'images précharger
+// mode manuel d'affichage d'images : si true on ignore certains changements d'état player
+let displayingManualImage = false;
 
 // Helper : précharge une image et la stocke dans imageCache
 function preloadImage(url) {
@@ -187,6 +189,9 @@ function preloadAndShow(url) {
 function displayImage(url) {
   console.log("[RECEIVER] displayImage:", url);
 
+  // Indique qu'on est en mode affichage manuel d'image
+  displayingManualImage = true;
+
   imageDisplay.src = url;
 
   // Sécurité première image : empêche UI hidden trop tôt
@@ -194,8 +199,6 @@ function displayImage(url) {
     imageUI.style.display = "flex";
     document.body.classList.add("playing");
     firstImageShown = true;
-    
-
   } else {
     // images suivantes : logique normale
     imageUI.style.display = "flex";
@@ -209,6 +212,7 @@ function displayImage(url) {
   if (audioPauseIcon) audioPauseIcon.style.display = "none";
   if (bottomUI) bottomUI.classList.remove("show");
 }
+
 
 
 
@@ -450,6 +454,7 @@ function handlePlayerState(state) {
 
   switch(state) {
     case cast.framework.ui.State.PLAYING:
+      displayingManualImage = false;
       document.body.classList.add("playing");
       if (isAudioContent) {
         audioUI.style.display = "flex";
@@ -475,6 +480,10 @@ function handlePlayerState(state) {
       break;
     case cast.framework.ui.State.IDLE:
     case cast.framework.ui.State.LAUNCHING:
+      if (displayingManualImage) {
+      console.log("[RECEIVER] Ignorer IDLE pour image manuelle");
+      break;
+      }
       document.body.classList.remove("playing");
       if (bottomUI) bottomUI.classList.remove("show");
       if (pauseIcon) pauseIcon.style.display = "none";
