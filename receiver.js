@@ -504,7 +504,7 @@ try {
       console.log("PlayerData.STATE_CHANGED:", e.value+" "+displayingManualImage);
       
       if (displayingManualImage && e.value === cast.framework.ui.State.IDLE) {
-        setTimeout(() => handlePlayerState(e.value), 100);
+        setTimeout(() => handlePlayerState(e.value), 5000);
         return;
       }
       handlePlayerState(e.value);
