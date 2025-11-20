@@ -4,6 +4,18 @@ cast.framework.CastReceiverContext.getInstance().setLoggerLevel(cast.framework.L
 // Récupère le contexte et le player
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
+// 🚫 Empêche le PlayerManager d'essayer de lire les images (sinon IDLE → écran d'accueil)
+playerManager.setMessageInterceptor(
+  cast.framework.messages.MessageType.LOAD,
+  message => {
+      if (message.media && message.media.contentType 
+          && message.media.contentType.startsWith("image/")) {
+          console.log("[RECEIVER] Intercepteur: image => gestion manuelle");
+          return null; // on bloque le PlayerManager pour les images
+      }
+      return message; // vidéo/audio continue normalement
+  }
+);
 
 let mediaDuration = 0;                // durée du média en secondes
 let hideProgressTimeout = null;       // timer pour cacher bottom-ui (vidéo)
