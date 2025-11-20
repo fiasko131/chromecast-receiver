@@ -81,7 +81,7 @@ function preloadImage(url) {
     if (idx < imageList.length) preloadImage(imageList[idx]);
   }
 }*/
-function showImageAtIndex(index) {
+/*function showImageAtIndex(index) {
     if (!Array.isArray(imageList) || imageList.length === 0) return;
     if (index < 0) index = 0;
     if (index >= imageList.length) index = imageList.length - 1;
@@ -125,7 +125,77 @@ function showImageAtIndex(index) {
         const idx = currentImageIndex + i;
         if (idx < imageList.length) preloadImage(imageList[idx]);
     }
+}*/
+
+let firstImageShown = false;
+
+function showImageAtIndex(index) {
+  if (!Array.isArray(imageList) || imageList.length === 0) return;
+  if (index < 0) index = 0;
+  if (index >= imageList.length) index = imageList.length - 1;
+
+  currentImageIndex = index;
+  const url = imageList[currentImageIndex];
+  console.log("[RECEIVER] Affichage index=", index, "url=", url);
+
+  // on attend que le DOM soit prêt au cas où
+  const startDisplay = () => {
+    // vérif si déjà préchargée
+    if (imageCache[url] && imageCache[url].complete) {
+      displayImage(url);
+    } else {
+      preloadAndShow(url);
+    }
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startDisplay);
+  } else {
+    startDisplay();
+  }
+
+  // précharge les images suivantes
+  for (let i = 1; i <= PRELOAD_AHEAD; i++) {
+    const idx = currentImageIndex + i;
+    if (idx < imageList.length) preloadImage(imageList[idx]);
+  }
 }
+
+// charge + affiche en garantissant le rendu
+function preloadAndShow(url) {
+  const img = new Image();
+  img.onload = () => {
+    imageCache[url] = img;
+    displayImage(url);
+  };
+  img.src = url;
+}
+
+// affiche vraiment l’image + UI
+function displayImage(url) {
+  console.log("[RECEIVER] displayImage:", url);
+
+  imageDisplay.src = url;
+
+  // Sécurité première image : empêche UI hidden trop tôt
+  if (!firstImageShown) {
+    imageUI.style.display = "flex";
+    document.body.classList.add("playing");
+    firstImageShown = true;
+  } else {
+    // images suivantes : logique normale
+    imageUI.style.display = "flex";
+  }
+
+  // masquage du player/audio
+  const p = document.getElementById("player");
+  if (p) p.style.display = "none";
+  if (audioUI) audioUI.style.display = "none";
+  if (pauseIcon) pauseIcon.style.display = "none";
+  if (audioPauseIcon) audioPauseIcon.style.display = "none";
+  if (bottomUI) bottomUI.classList.remove("show");
+}
+
 
 
 // Reçoit messages images (CAF v3)
