@@ -15,9 +15,48 @@ let isAudioContent = false;           // ⚡ true si média audio
 let audioCurrentTimeSec = 0;
 let audioTimer = null;
 let audioIsPlaying = false;
+let videoProgressTimer = null;
+
 
 // ==================== IMAGE NAMESPACE & STATE ====================
 const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
+
+function sendImageUpdate(data) {
+  try {
+    context.sendCustomMessage(IMAGE_NAMESPACE, undefined, data);
+    console.log("[RECEIVER] ➡️ Message envoyé:", data);
+  } catch (e) {
+    console.warn("[RECEIVER] ⚠️ Erreur envoi custom message:", e);
+  }
+}
+
+function startVideoProgressUpdates(videoElement) {
+  stopVideoProgressUpdates(); // sécurité
+
+  videoProgressTimer = setInterval(() => {
+    if (!videoElement || videoElement.readyState === 0) return;
+
+    const current = Math.floor(videoElement.currentTime * 1000);
+    const duration = Math.floor(videoElement.duration * 1000);
+
+    if (!isNaN(current) && !isNaN(duration) && duration > 0) {
+      sendImageUpdate({
+        type: "PROGRESS",
+        current,
+        duration,
+        index: currentImageIndex
+      });
+    }
+  }, 500); // toutes les 500ms
+}
+
+function stopVideoProgressUpdates() {
+  if (videoProgressTimer) {
+    clearInterval(videoProgressTimer);
+    videoProgressTimer = null;
+  }
+}
+
 
 // Liste d'URLs d'images (fournie par l'app Android via LOAD_IMAGE_LIST)
 // NOTE : ce tableau devient mixte (images, videos, audio); on garde le nom imageList pour compatibilité
@@ -90,6 +129,7 @@ function preloadVideo(url) {
 
 // -------------------- Affichage (image) --------------------
 function showImageAtIndex(index) {
+  stopVideoProgressUpdates();
   if (!Array.isArray(imageList) || imageList.length === 0) return;
   if (index < 0) index = 0;
   if (index >= imageList.length) index = imageList.length - 1;
@@ -113,6 +153,14 @@ function showImageAtIndex(index) {
   } else {
     startDisplay();
   }
+
+  // send to android
+  sendImageUpdate({
+    type: 'CURRENT_INDEX',
+    index: currentImageIndex,
+    url: url,
+    kind: 'image'
+  });
 
   // précharge les images / videos suivantes
   for (let i = 1; i <= PRELOAD_AHEAD; i++) {
@@ -192,6 +240,15 @@ function showVideoAtIndex(index) {
   const url = imageList[currentImageIndex];
   console.log("[RECEIVER] Affichage VIDEO index=", index, "url=", url);
 
+  // send message to android
+  sendImageUpdate({
+    type: 'CURRENT_INDEX',
+    index: currentImageIndex,
+    url: url,
+    kind: 'video'
+  });
+
+
   // Mode manuel vidéo
   displayingManualVideo = true;
   displayingManualImage = false;
@@ -201,6 +258,7 @@ function showVideoAtIndex(index) {
   if (audioUI) audioUI.style.display = "none";
 
   const v = document.getElementById("player");
+  startVideoProgressUpdates(v);
   if (!v) {
     console.error("player element introuvable");
     return;
@@ -219,11 +277,15 @@ function showVideoAtIndex(index) {
 
   // events
   v.onplay = () => {
+    startVideoProgressUpdates(v);
+    sendImageUpdate({ type: 'PLAYER_STATE', state: 'PLAYING', index: currentImageIndex });
     console.log("[RECEIVER] video onplay");
     if (pauseIcon) pauseIcon.style.display = "none";
     isAudioContent = false;
   };
   v.onpause = () => {
+    stopVideoProgressUpdates();
+    sendImageUpdate({ type: 'PLAYER_STATE', state: 'PAUSED', index: currentImageIndex });
     console.log("[RECEIVER] video onpause");
     if (pauseIcon) pauseIcon.style.display = "block";
   };
@@ -242,6 +304,8 @@ function showVideoAtIndex(index) {
     if (currentTimeElem) currentTimeElem.textContent = formatTime(v.currentTime);
   };
   v.onended = () => {
+    stopVideoProgressUpdates();
+    sendImageUpdate({ type: 'PLAYER_STATE', state: 'ENDED', index: currentImageIndex });
     console.log("[RECEIVER] video ended");
     if (bottomUI) bottomUI.classList.remove("show");
     displayingManualVideo = false;
@@ -258,6 +322,14 @@ function showAudioAtIndex(index) {
   currentImageIndex = index;
   const url = imageList[currentImageIndex];
   console.log("[RECEIVER] Affichage AUDIO index=", index, "url=", url);
+
+  // send message to android
+  sendImageUpdate({
+    type: 'CURRENT_INDEX',
+    index: currentImageIndex,
+    url: url,
+    kind: 'audio'
+  });
 
   // Ici on choisit une implémentation simple : utiliser playerManager.load si on veut
   // permettre au cast standard d'afficher la UI audio (metadata, contrôle remote).
