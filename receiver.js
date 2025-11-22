@@ -57,6 +57,37 @@ function stopVideoProgressUpdates() {
   }
 }
 
+function isPlayingVideo(video) {
+  return (
+    video &&
+    !video.paused &&
+    !video.ended &&
+    video.readyState >= 2
+  );
+}
+
+function sendStateInfoVideo() {
+  if (!window.cast || !window.cast.framework) return;
+
+  let state;
+  if (!v) {
+    state = "none";
+  } else if (v.paused) {
+    state = "paused";
+  } else if (v.readyState < 3) {
+    state = "buffering";
+  } else {
+    state = "playing";
+  }
+  context.sendCustomMessage(IMAGE_NAMESPACE, {
+    type: "STATE_INFO_VIDEO",
+    state: state,
+    index: currentIndex,
+    url: currentUrl
+  });
+}
+
+
 
 // Liste d'URLs d'images (fournie par l'app Android via LOAD_IMAGE_LIST)
 // NOTE : ce tableau devient mixte (images, videos, audio); on garde le nom imageList pour compatibilité
@@ -68,6 +99,8 @@ const PRELOAD_AHEAD = 2;       // combien d'images précharger
 let displayingManualImage = false;
 let displayingManualVideo = false; // nouveau flag pour video gérée manuellement
 let firstImageShown = false;
+let v = null // video player;
+
 
 // -------------------- Helpers type de média --------------------
 // Détection par suffixe/url comme demandé : /v pour vidéo, /a pour audio
@@ -257,7 +290,7 @@ function showVideoAtIndex(index) {
   if (imageUI) imageUI.style.display = "none";
   if (audioUI) audioUI.style.display = "none";
 
-  const v = document.getElementById("player");
+  v = document.getElementById("player");
   startVideoProgressUpdates(v);
   if (!v) {
     console.error("player element introuvable");
@@ -361,19 +394,23 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     if (!data || !data.type) return;
     console.log("data.type:", data.type);
     switch (data.type) {
-      case "PLAY":
-          v.play();
-          break;
-
-        case "PAUSE":
+      case "GET_STATE_VIDEO":
+        break;
+      case "PLAY_VIDEO":
+        if (!isPlaying(v)) {
+          v.play().catch(err => console.warn("Erreur play:", err));
+        }
+        break;
+      case "PAUSE_VIDEO":
+        if (isPlaying(v)) {
           v.pause();
-          break;
-
-        case "SEEK":
-          if (data.position !== undefined) {
-            v.seek(data.position);
-          }
-          break;
+        }
+        break;
+      case "SEEK_VIDEO":
+        if (v && data.position !== undefined) {
+           v.seek(data.position);
+        }
+        break;
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
         if (Array.isArray(data.urls)) {
