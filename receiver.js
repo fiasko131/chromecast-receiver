@@ -950,32 +950,30 @@ playerManager.addEventListener(
   cast.framework.events.EventType.MEDIA_STATUS,
   (event) => {
 
-    const state = playerManager.getPlayerState(); // renvoie une string
+    const state = playerManager.getPlayerState(); // string
 
     let status;
-    switch(state) {
-      case "PLAYING":
-        status = "playing";
-        break;
-      case "PAUSED":
-        status = "paused";
-        break;
-      case "IDLE":
-        // si IDLE = FIN (FINISHED)
-        /*if (playerManager.getIdleReason() === cast.framework.events.IdleReason.FINISHED) {
-          status = "ended";
-        } else {
-          status = "idle";
-        }*/
-        status = "idle"
-        break;
-      default:
-        status = (typeof state === "string") ? state.toLowerCase() : "unknown";
+    if (state === "PLAYING") status = "playing";
+    else if (state === "PAUSED") status = "paused";
+    else if (state === "BUFFERING") status = "buffering";
+    else if (state === "IDLE") {
+
+      // ⚡ détecter FIN de lecture
+      const ct = playerManager.getCurrentTime ? playerManager.getCurrentTime() : 0;
+      const dur = playerManager.getDuration ? playerManager.getDuration() : 0;
+
+      if (dur > 0 && ct >= dur - 0.5) {
+        status = "ended";       // 🎉 FIN TERMINÉE
+      } else {
+        status = "idle";        // 💤 idle normal (arrêt, pas de média)
+      }
+    } else {
+      status = (typeof state === "string") ? state.toLowerCase() : "unknown";
     }
 
     console.log("[Video STATE] =>", status);
 
-    // 🔹 Envoi au téléphone (custom cast message)
+    // 🔃 Envoi au téléphone
     context.sendCustomMessage(IMAGE_NAMESPACE, {
       type: 'PLAYER_STATE',
       state: status,
@@ -984,6 +982,7 @@ playerManager.addEventListener(
     });
   }
 );
+
 
 
 
