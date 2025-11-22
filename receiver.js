@@ -917,6 +917,34 @@ playerManager.addEventListener(
 );
 
 // ==================== PROGRESS POUR VIDEO ====================
+playerManager.addEventListener(
+  cast.framework.events.EventType.PROGRESS,
+  (event) => {
+    if (isAudioContent) return;  // AUDIO géré par timer
+    if (!mediaDuration || mediaDuration <= 0) return;
+
+    const currentTime = (typeof event.currentTime === "number") 
+                          ? event.currentTime 
+                          : event.currentMediaTime;
+    if (typeof currentTime !== "number" || isNaN(currentTime)) return;
+
+    const pct = (currentTime / mediaDuration) * 100;
+    progressBar.style.width = pct + "%";
+    currentTimeElem.textContent = formatTime(currentTime);
+    totalTimeElem.textContent = formatTime(mediaDuration);
+
+    console.log(`[Video PROGRESS] currentTime=${currentTime.toFixed(1)}s | duration=${mediaDuration.toFixed(1)}s | pct=${pct.toFixed(2)}%`);
+
+    // 🔹 Envoi à Android via custom message
+    context.sendCustomMessage(IMAGE_NAMESPACE, {
+        type: 'PROGRESS',
+        current: currentTime,
+        duration: mediaDuration
+    });
+  }
+);
+
+// ==================== STATUS POUR PREMI7RE VIDEO CUSTOM ====================
 // ==================== STATUS POUR VIDEO ====================
 playerManager.addEventListener(
   cast.framework.events.EventType.MEDIA_STATUS,
