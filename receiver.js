@@ -100,15 +100,32 @@ function sendStateInfoVideo() {
   if (!window.cast || !window.cast.framework) return;
 
   let state;
-  if (!v) {
+
+  if (!playerManager) {
     state = "none";
-  } else if (v.paused) {
-    state = "paused";
-  } else if (v.readyState < 3) {
-    state = "buffering";
   } else {
-    state = "playing";
+    // Récupérer l'état du player CAF
+    const pmState = playerManager.getPlayerState(); // renvoie "IDLE", "PLAYING", "PAUSED", "BUFFERING"
+
+    switch(pmState) {
+      case cast.framework.ui.State.PLAYING:
+        state = "playing";
+        break;
+      case cast.framework.ui.State.PAUSED:
+        state = "paused";
+        break;
+      case cast.framework.ui.State.BUFFERING:
+        state = "buffering";
+        break;
+      case cast.framework.ui.State.IDLE:
+        state = "none"; // ou "ended" si tu veux détecter fin
+        break;
+      default:
+        state = "unknown";
+        break;
+    }
   }
+
   context.sendCustomMessage(IMAGE_NAMESPACE, {
     type: "STATE_INFO_VIDEO",
     state: state,
@@ -116,6 +133,7 @@ function sendStateInfoVideo() {
     url: currentUrl
   });
 }
+
 
 
 
@@ -449,36 +467,75 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
 
     if (!data || !data.type) return;
     console.log("data.type:", data.type);
+
+    // ============================================================
+    // 🔧 AJOUT VIDEO CAF : fonction d’aide
+    // ============================================================
+    function loadVideoViaCAF(url, title = "Video", contentType = "video/mp4") {
+      console.log("🎬 [CAF] Chargement vidéo via PlayerManager:", url);
+
+      const mediaInfo = new cast.framework.messages.MediaInformation();
+      mediaInfo.contentId = url;
+      mediaInfo.contentType = contentType;
+
+      const md = new cast.framework.messages.GenericMediaMetadata();
+      md.title = title;
+      mediaInfo.metadata = md;
+
+      const req = new cast.framework.messages.LoadRequestData();
+      req.media = mediaInfo;
+      req.autoplay = true;
+
+      // empêche votre lecteur <video> d'interférer
+      displayingManualVideo = false;
+
+      playerManager.load(req).then(() => {
+        console.log("🎉 Lecture CAF OK");
+      }).catch(e => console.error("❌ Erreur load CAF:", e));
+    }
+
+    // ============================================================
+    // 🔧 AJOUT VIDEO CAF : wrapper pour remplacer votre castLoadVideo
+    // ============================================================
+    function castLoadVideoCAF(url) {
+      loadVideoViaCAF(url);  // simple délégation
+    }
+
     switch (data.type) {
+
       case "GET_STATE_VIDEO":
         break;
+
       case "PLAY_VIDEO":
         if (!isPlaying(v)) {
           v.play().catch(err => console.warn("Erreur play:", err));
         }
         break;
+
       case "PAUSE_VIDEO":
         if (isPlaying(v)) {
           v.pause();
         }
         break;
+
       case "SEEK_VIDEO":
         if (v && data.position !== undefined) {
            v.seek(data.position);
         }
         break;
+
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
         if (Array.isArray(data.urls)) {
           imageList = data.urls.slice(); // clone
-          // Déterminer l'index de départ
+
           const startIndex = (typeof data.index === 'number' && data.index >= 0) 
                             ? Math.min(Math.max(0, data.index), imageList.length - 1)
                             : 0;
           currentImageIndex = startIndex;
           console.log("[RECEIVER] index ", "data.index "+data.index+ " currentImageIndex "+currentImageIndex);
 
-          // préchargement initial (mix images/videos)
+          // préchargements
           const firstUrl = imageList[currentImageIndex];
           if (isVideoUrl(firstUrl)) preloadVideo(firstUrl); else preloadImage(firstUrl);
 
@@ -491,21 +548,27 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
             if (isVideoUrl(u2)) preloadVideo(u2); else preloadImage(u2);
           }
 
-          // afficher la première image / video
+          // ============================================================
+          // votre logique existante pour afficher le premier élément
+          // ============================================================
           if (!firstImageShown && imageList.length > 0) {
               const first = imageList[currentImageIndex];
 
               if (isImageUrl(first)) {
                   displayFirstImage(first);
+
               } else if (isVideoUrl(first)) {
-                  console.log("[RECEIVER] Première vidéo → on prépare, mais on ne joue pas encore");
-                  //preloadVideo(first);  // facultatif mais pas play()
-                  castLoadVideo(first);
-                  pendingVideoUrl = first; // on la met en attente
+                  console.log("[RECEIVER] Première vidéo → passage en mode CAF");
+
+                  // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
+                  castLoadVideoCAF(first);
+
+                  pendingVideoUrl = first;
                   firstImageShown = true;
-                  // lancer manuellement la lecture pour ne pas rester bloqué
-                  playerManager.play();
-                  pendingVideoUrl = null;   // plus besoin de flag après lancement
+
+                  // 🔧 AJOUT VIDEO CAF : le CAF gère autoplay
+                  pendingVideoUrl = null;
+
               } else if (isAudioUrl(first)) {
                   showAudioAtIndex(currentImageIndex);
                   firstImageShown = true;
@@ -514,7 +577,8 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           } else {
               const cur = imageList[currentImageIndex];
               if (isVideoUrl(cur)) {
-                  showVideoAtIndex(currentImageIndex); // ici ce sera un deuxième élément, ok
+                  // 🔧 AJOUT VIDEO CAF
+                  castLoadVideoCAF(cur);
               } else {
                   showImageAtIndex(currentImageIndex);
               }
@@ -526,16 +590,18 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         break;
 
       case 'SET_INDEX':
-        // data.index must be index in imageList
         if (typeof data.index === 'number') {
           const idxSet = Math.min(Math.max(0, data.index), imageList.length - 1);
-          // Router selon type : image / video / audio
           const urlToShow = imageList[idxSet];
+
           if (isVideoUrl(urlToShow)) {
-            showVideoAtIndex(idxSet);
-          } else if (isAudioUrl(urlToShow)) {
+            // 🔧 AJOUT VIDEO CAF
+            castLoadVideoCAF(urlToShow);
+          } 
+          else if (isAudioUrl(urlToShow)) {
             showAudioAtIndex(idxSet);
-          } else {
+          } 
+          else {
             showImageAtIndex(idxSet);
           }
         } else {
@@ -544,9 +610,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         break;
 
       case 'LOAD_IMAGE':
-        // legacy single image load
         if (data.url) {
-          // treat as single-element list
           imageList = [data.url];
           currentImageIndex = 0;
           preloadImage(data.url);
@@ -555,15 +619,23 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         break;
 
       case 'NEXT_IMAGE':
-        // optionally accept data.index (explicit) or increment
         if (typeof data.index === 'number') {
           const idx = Math.min(Math.max(0,data.index), imageList.length - 1);
           const urlN = imageList[idx];
-          if (isVideoUrl(urlN)) showVideoAtIndex(idx); else showImageAtIndex(idx);
+
+          if (isVideoUrl(urlN)) 
+              castLoadVideoCAF(urlN);  // 🔧 AJOUT VIDEO CAF
+          else 
+              showImageAtIndex(idx);
+
         } else {
           const nextIdx = Math.min(currentImageIndex + 1, imageList.length - 1);
           const urlN = imageList[nextIdx];
-          if (isVideoUrl(urlN)) showVideoAtIndex(nextIdx); else showImageAtIndex(nextIdx);
+
+          if (isVideoUrl(urlN)) 
+              castLoadVideoCAF(urlN);  // 🔧 AJOUT VIDEO CAF
+          else 
+              showImageAtIndex(nextIdx);
         }
         break;
 
@@ -572,11 +644,20 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         if (typeof data.index === 'number') {
           const idxP = Math.min(Math.max(0, data.index), imageList.length - 1);
           const urlP = imageList[idxP];
-          if (isVideoUrl(urlP)) showVideoAtIndex(idxP); else showImageAtIndex(idxP);
+
+          if (isVideoUrl(urlP))
+              castLoadVideoCAF(urlP);  // 🔧 AJOUT VIDEO CAF
+          else
+              showImageAtIndex(idxP);
+
         } else {
           const prevIdx = Math.max(currentImageIndex - 1, 0);
           const urlP = imageList[prevIdx];
-          if (isVideoUrl(urlP)) showVideoAtIndex(prevIdx); else showImageAtIndex(prevIdx);
+
+          if (isVideoUrl(urlP))
+              castLoadVideoCAF(urlP);  // 🔧 AJOUT VIDEO CAF
+          else
+              showImageAtIndex(prevIdx);
         }
         break;
 
@@ -587,6 +668,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     console.error("Erreur traitement message image:", err);
   }
 });
+
 
 // -------------------- displayFirstImage existante (inchangée, juste compatible) --------------------
 function displayFirstImage(url) {
@@ -982,11 +1064,6 @@ playerManager.addEventListener(
     });
   }
 );
-
-
-
-
-
 
 // ==================== START RECEIVER ========================
 context.start();
