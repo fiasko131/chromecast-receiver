@@ -502,28 +502,28 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     }
 
     switch (data.type) {
-
       case "GET_STATE_VIDEO":
+        sendStateInfoVideo();
         break;
 
       case "PLAY_VIDEO":
-        if (!isPlaying(v)) {
-          v.play().catch(err => console.warn("Erreur play:", err));
+        if (playerManager && playerManager.getPlayerState() !== cast.framework.ui.State.PLAYING) {
+          playerManager.play().catch(err => console.warn("Erreur play via CAF:", err));
         }
         break;
 
       case "PAUSE_VIDEO":
-        if (isPlaying(v)) {
-          v.pause();
+        if (playerManager && playerManager.getPlayerState() === cast.framework.ui.State.PLAYING) {
+          playerManager.pause();
         }
         break;
 
-      case "SEEK_VIDEO":
-        if (v && data.position !== undefined) {
-           v.seek(data.position);
-        }
-        break;
-
+        case "SEEK_VIDEO":
+          if (playerManager && typeof data.position === "number") {
+            // ⚡ seek en secondes
+            playerManager.seek(data.position/1000);
+          }
+          break;
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
         if (Array.isArray(data.urls)) {
