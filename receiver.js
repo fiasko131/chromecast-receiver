@@ -303,6 +303,20 @@ function playPendingVideo() {
   pendingVideoUrl = null;
 }
 
+function castLoadVideo(url) {
+  const mediaInfo = new cast.framework.messages.MediaInformation();
+  mediaInfo.contentId = url;
+  mediaInfo.contentType = "video/mp4"; // ou détecter dynamiquement
+
+  const request = new cast.framework.messages.LoadRequestData();
+  request.autoplay = false;  // on n’auto-joue PAS
+  request.media = mediaInfo;
+
+  console.log("[RECEIVER] Envoi d’un LOAD vidéo CAF pour éviter le timeout");
+  playerManager.load(request);
+}
+
+
 
 // Fonction qui affiche une vidéo (utilise ton <video id="player">)
 // Ce comportement lit la vidéo localement (par ton nano server) sans dépendre d'un LOAD CAF
@@ -485,7 +499,8 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
                   displayFirstImage(first);
               } else if (isVideoUrl(first)) {
                   console.log("[RECEIVER] Première vidéo → on prépare, mais on ne joue pas encore");
-                  preloadVideo(first);  // facultatif mais pas play()
+                  //preloadVideo(first);  // facultatif mais pas play()
+                  castLoadVideo(first);
                   pendingVideoUrl = first; // on la met en attente
                   firstImageShown = true;
               } else if (isAudioUrl(first)) {
