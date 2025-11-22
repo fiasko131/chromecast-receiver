@@ -950,18 +950,18 @@ playerManager.addEventListener(
   cast.framework.events.EventType.MEDIA_STATUS,
   (event) => {
 
-    const state = playerManager.getPlayerState(); // "PLAYING", "PAUSED", "IDLE", etc.
-    let status;
+    const state = playerManager.getPlayerState(); // renvoie une string
 
+    let status;
     switch(state) {
-      case cast.framework.PlayerState.PLAYING:
+      case "PLAYING":
         status = "playing";
         break;
-      case cast.framework.PlayerState.PAUSED:
+      case "PAUSED":
         status = "paused";
         break;
-      case cast.framework.PlayerState.IDLE:
-        // si IDLE = FINI ?
+      case "IDLE":
+        // si IDLE = FIN (FINISHED)
         if (playerManager.getIdleReason() === cast.framework.events.IdleReason.FINISHED) {
           status = "ended";
         } else {
@@ -969,7 +969,7 @@ playerManager.addEventListener(
         }
         break;
       default:
-        status = state.toLowerCase();
+        status = (typeof state === "string") ? state.toLowerCase() : "unknown";
     }
 
     console.log("[Video STATE] =>", status);
@@ -978,11 +978,12 @@ playerManager.addEventListener(
     context.sendCustomMessage('urn:x-cast:com.your.namespace', {
       type: 'VIDEO_STATE',
       state: status,
-      index: currentImageIndex, // index courant
+      index: currentImageIndex,
       url: imageList[currentImageIndex]
     });
   }
 );
+
 
 
 
