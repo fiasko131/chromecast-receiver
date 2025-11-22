@@ -962,11 +962,12 @@ playerManager.addEventListener(
         break;
       case "IDLE":
         // si IDLE = FIN (FINISHED)
-        if (playerManager.getIdleReason() === cast.framework.events.IdleReason.FINISHED) {
+        /*if (playerManager.getIdleReason() === cast.framework.events.IdleReason.FINISHED) {
           status = "ended";
         } else {
           status = "idle";
-        }
+        }*/
+        status = "idle"
         break;
       default:
         status = (typeof state === "string") ? state.toLowerCase() : "unknown";
@@ -975,8 +976,8 @@ playerManager.addEventListener(
     console.log("[Video STATE] =>", status);
 
     // 🔹 Envoi au téléphone (custom cast message)
-    context.sendCustomMessage('urn:x-cast:com.your.namespace', {
-      type: 'VIDEO_STATE',
+    context.sendCustomMessage(IMAGE_NAMESPACE, {
+      type: 'PLAYER_STATE',
       state: status,
       index: currentImageIndex,
       url: imageList[currentImageIndex]
