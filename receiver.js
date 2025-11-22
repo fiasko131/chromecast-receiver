@@ -129,8 +129,8 @@ function sendStateInfoVideo() {
   context.sendCustomMessage(IMAGE_NAMESPACE, {
     type: "STATE_INFO_VIDEO",
     state: state,
-    index: currentIndex,
-    url: currentUrl
+    index: currentImageIndex,
+    url: imageList[currentImageIndex]
   });
 }
 
@@ -592,6 +592,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       case 'SET_INDEX':
         if (typeof data.index === 'number') {
           const idxSet = Math.min(Math.max(0, data.index), imageList.length - 1);
+          currentImageIndex = idxSet;
           const urlToShow = imageList[idxSet];
 
           if (isVideoUrl(urlToShow)) {
