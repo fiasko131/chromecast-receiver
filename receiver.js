@@ -923,7 +923,9 @@ playerManager.addEventListener(
     if (isAudioContent) return;  // AUDIO géré par timer
     if (!mediaDuration || mediaDuration <= 0) return;
 
-    const currentTime = (typeof event.currentTime === "number") ? event.currentTime : event.currentMediaTime;
+    const currentTime = (typeof event.currentTime === "number") 
+                          ? event.currentTime 
+                          : event.currentMediaTime;
     if (typeof currentTime !== "number" || isNaN(currentTime)) return;
 
     const pct = (currentTime / mediaDuration) * 100;
@@ -932,8 +934,55 @@ playerManager.addEventListener(
     totalTimeElem.textContent = formatTime(mediaDuration);
 
     console.log(`[Video PROGRESS] currentTime=${currentTime.toFixed(1)}s | duration=${mediaDuration.toFixed(1)}s | pct=${pct.toFixed(2)}%`);
+
+    // 🔹 Envoi à Android via custom message
+    context.sendCustomMessage(IMAGE_NAMESPACE, {
+        type: 'PROGRESS',
+        current: currentTime,
+        duration: mediaDuration
+    });
   }
 );
+
+// ==================== STATUS POUR PREMI7RE VIDEO CUSTOM ====================
+playerManager.addEventListener(
+  cast.framework.events.EventType.PLAYER_STATE_CHANGED,
+  (event) => {
+    const state = playerManager.getPlayerState(); // "PLAYING", "PAUSED", "IDLE"
+
+    let status;
+    switch(state) {
+      case cast.framework.PlayerState.PLAYING:
+        status = "playing";
+        break;
+      case cast.framework.PlayerState.PAUSED:
+        status = "paused";
+        break;
+      case cast.framework.PlayerState.IDLE:
+        // si ended, idle peut aussi correspondre à FIN
+        if (playerManager.getIdleReason() === cast.framework.events.IdleReason.FINISHED) {
+          status = "ended";
+        } else {
+          status = "idle";
+        }
+        break;
+      default:
+        status = state.toLowerCase();
+    }
+
+    console.log("[Video STATE] status=", status);
+
+    // 🔹 Envoi à Android via custom message
+    context.sendCustomMessage(IMAGE_NAMESPACE, {
+      type: 'PLAYER_STATE',
+      state: status,
+      index: currentIndex,  // index de la vidéo en cours
+      url: currentUrl       // URL de la vidéo
+    });
+  }
+);
+
+
 
 // ==================== START RECEIVER ========================
 context.start();
