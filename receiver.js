@@ -5,6 +5,36 @@ cast.framework.CastReceiverContext.getInstance().setLoggerLevel(cast.framework.L
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 
+// pour la première video en mode custom
+let firstVideoLoadReceived = false;
+let pendingVideoUrl = null;
+
+// pour simuler un load
+playerManager.setMessageInterceptor(
+  cast.framework.messages.MessageType.LOAD,
+  (loadRequest) => {
+
+    // 1️⃣ IMAGE → on bloque le player
+    if (loadRequest.media?.contentType?.startsWith("image/")) {
+        console.log("[RECEIVER] IMAGE interceptée → affichage manuel");
+        showImage(loadRequest.media?.contentId);
+        return null;
+    }
+
+    // 2️⃣ VIDEO → on libère le player CAF
+    console.log("[RECEIVER] VIDEO interceptée:", loadRequest.media?.contentId);
+    firstVideoLoadReceived = true;
+
+    // si une vidéo était en attente, on vérifie si c'est la bonne
+    if (pendingVideoUrl && pendingVideoUrl === loadRequest.media?.contentId) {
+        console.log("[RECEIVER] Lecture de la première vidéo après LOAD…");
+        pendingVideoUrl = null;
+    }
+
+    return loadRequest; // laisse CAF jouer la vidéo normalement
+  }
+);
+
 
 let mediaDuration = 0;                // durée du média en secondes
 let hideProgressTimeout = null;       // timer pour cacher bottom-ui (vidéo)
@@ -100,6 +130,8 @@ let displayingManualImage = false;
 let displayingManualVideo = false; // nouveau flag pour video gérée manuellement
 let firstImageShown = false;
 let v = null // video player;
+
+
 
 
 // -------------------- Helpers type de média --------------------
@@ -261,6 +293,16 @@ function stopManualVideoIfAny() {
   }
   displayingManualVideo = false;
 }
+
+function playPendingVideo() {
+  const v = document.getElementById("player");
+  if (!v || !pendingVideoUrl) return;
+
+  v.src = pendingVideoUrl;
+  v.play().catch(e => console.warn("Erreur lecture vidéo initiale:", e));
+  pendingVideoUrl = null;
+}
+
 
 // Fonction qui affiche une vidéo (utilise ton <video id="player">)
 // Ce comportement lit la vidéo localement (par ton nano server) sans dépendre d'un LOAD CAF
@@ -437,24 +479,29 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
 
           // afficher la première image / video
           if (!firstImageShown && imageList.length > 0) {
-              // si première est une image -> displayFirstImage (garde la logique existante)
               const first = imageList[currentImageIndex];
+
               if (isImageUrl(first)) {
-                displayFirstImage(first);
+                  displayFirstImage(first);
               } else if (isVideoUrl(first)) {
-                // si première est une vidéo : afficher directement via showVideoAtIndex
-                showVideoAtIndex(currentImageIndex);
-                firstImageShown = true;
+                  console.log("[RECEIVER] Première vidéo → on prépare, mais on ne joue pas encore");
+                  preloadVideo(first);  // facultatif mais pas play()
+                  pendingVideoUrl = first; // on la met en attente
+                  firstImageShown = true;
               } else if (isAudioUrl(first)) {
-                showAudioAtIndex(currentImageIndex);
-                firstImageShown = true;
+                  showAudioAtIndex(currentImageIndex);
+                  firstImageShown = true;
               }
+
           } else {
-              // show selon type
               const cur = imageList[currentImageIndex];
-              if (isVideoUrl(cur)) showVideoAtIndex(currentImageIndex);
-              else showImageAtIndex(currentImageIndex);
+              if (isVideoUrl(cur)) {
+                  showVideoAtIndex(currentImageIndex); // ici ce sera un deuxième élément, ok
+              } else {
+                  showImageAtIndex(currentImageIndex);
+              }
           }
+
         } else {
           console.warn("LOAD_LIST sans urls valides");
         }
