@@ -361,6 +361,19 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     if (!data || !data.type) return;
     console.log("data.type:", data.type);
     switch (data.type) {
+      case "PLAY":
+          v.play();
+          break;
+
+        case "PAUSE":
+          v.pause();
+          break;
+
+        case "SEEK":
+          if (data.position !== undefined) {
+            v.seek(data.position);
+          }
+          break;
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
         if (Array.isArray(data.urls)) {
