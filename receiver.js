@@ -503,6 +503,9 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
                   castLoadVideo(first);
                   pendingVideoUrl = first; // on la met en attente
                   firstImageShown = true;
+                  // lancer manuellement la lecture pour ne pas rester bloqué
+                  playerManager.play();
+                  pendingVideoUrl = null;   // plus besoin de flag après lancement
               } else if (isAudioUrl(first)) {
                   showAudioAtIndex(currentImageIndex);
                   firstImageShown = true;
