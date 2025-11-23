@@ -504,7 +504,11 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         /*if (playerManager && playerManager.getPlayerState() !== cast.framework.ui.State.PLAYING) {
          
         }*/
-        playerManager.play().catch(err => console.warn("Erreur play via CAF:", err));
+        try {
+          playerManager.play();
+        } catch (err) {
+          console.warn("Erreur play via CAF:", err);
+        }
         break;
 
       case "PAUSE_VIDEO":
