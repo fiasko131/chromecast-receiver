@@ -447,6 +447,11 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
 
     if (!data || !data.type) return;
     console.log("data.type:", data.type);
+    context.sendCustomMessage(
+        IMAGE_NAMESPACE,
+        event.senderId,                    // obligatoire
+        JSON.stringify({ type: "HELLO_REPLY" })
+    );
 
     // ============================================================
     // 🔧 AJOUT VIDEO CAF : fonction d’aide
