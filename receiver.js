@@ -1068,10 +1068,17 @@ playerManager.addEventListener(
   }
 );
 
+context.addEventListener(
+  cast.framework.events.EventType.READY,
+  () => {
+    console.log("[RECEIVER] CAF READY — messages peuvent maintenant être envoyés");
+
+    // 🔹 Test HELLO
+    context.sendCustomMessage(IMAGE_NAMESPACE, { type: "HELLO" });
+  }
+);
+
 // ==================== START RECEIVER ========================
 context.start();
-context.sendCustomMessage(IMAGE_NAMESPACE, {
-    type: "HELLO_FROM_RECEIVER"
-});
-console.log("[RECEIVER] HELLO sent");
+
 
