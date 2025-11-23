@@ -566,10 +566,10 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
 
               } else if (isVideoUrl(first)) {
                   console.log("[RECEIVER] Première vidéo → passage en mode CAF");
-
+                  console.log("[RECEIVER] durationMs "+data.durationms);
                   // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
                   const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
-                  const durationMs = typeof data.durationMs === "number" ? data.durationMs : 0;
+                  const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
                   console.log("[RECEIVER] durationMs "+durationMs);
                   castLoadVideoCAF(first,"video",mimeType,durationMs);
 
