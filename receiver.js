@@ -9,6 +9,10 @@ const playerManager = context.getPlayerManager();
 let firstVideoLoadReceived = false;
 let pendingVideoUrl = null;
 
+let isCAFReady = false;
+const messageBuffer = [];  // stocke tous les messages à envoyer
+
+
 
 
 
@@ -1029,6 +1033,20 @@ playerManager.addEventListener(
   }
 );
 
+function sendCustomMessageSafe(namespace, payload) {
+    if (isCAFReady) {
+        try {
+            context.sendCustomMessage(namespace, payload);
+        } catch (err) {
+            console.error("[CAF] Erreur envoi message:", err);
+        }
+    } else {
+        // bufferise le message
+        messageBuffer.push({ namespace, payload });
+    }
+}
+
+
 // ==================== STATUS POUR PREMI7RE VIDEO CUSTOM ====================
 // ==================== STATUS POUR VIDEO ====================
 playerManager.addEventListener(
@@ -1059,24 +1077,38 @@ playerManager.addEventListener(
     console.log("[Video STATE] =>", status);
 
     // 🔃 Envoi au téléphone
-    context.sendCustomMessage(IMAGE_NAMESPACE, {
+    /*context.sendCustomMessage(IMAGE_NAMESPACE, {
       type: 'PLAYER_STATE',
       state: status,
       index: currentImageIndex,
       url: imageList[currentImageIndex]
+    });*/
+    // 🔹 Envoi via la fonction safe
+    sendCustomMessageSafe(IMAGE_NAMESPACE, {
+      type: 'PROGRESS',
+      current: Math.round(currentTime * 1000),    // ms
+      duration: Math.round(mediaDuration * 1000)  // ms
     });
   }
 );
 
 context.addEventListener(
-  cast.framework.events.EventType.READY,
-  () => {
-    console.warn("[RECEIVER] CAF READY — messages peuvent maintenant être envoyés");
+    cast.framework.events.EventType.READY,
+    () => {
+        console.warn("[RECEIVER] CAF READY — messages peuvent maintenant être envoyés");
+        isCAFReady = true;
 
-    // 🔹 Test HELLO
-    context.sendCustomMessage(IMAGE_NAMESPACE, { type: "HELLO" });
-  }
+        // 🔹 Envoyer tous les messages bufferisés
+        while (messageBuffer.length > 0) {
+            const { namespace, payload } = messageBuffer.shift();
+            context.sendCustomMessage(namespace, payload);
+        }
+
+        // 🔹 Test HELLO
+        sendCustomMessageSafe(IMAGE_NAMESPACE, { type: "HELLO" });
+    }
 );
+
 
 // ==================== START RECEIVER ========================
 context.start();
