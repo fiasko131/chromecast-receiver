@@ -464,8 +464,8 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
 
   // ⚡ Ajouter la durée si fournie (en secondes)
   if (durationMs > 0) {
-    mediaInfo.streamDuration = durationMs / 1000; // convert ms → s
-    console.log("Durée fournie pour CAF:", mediaInfo.streamDuration, "s");
+    //mediaInfo.streamDuration = durationMs / 1000; // convert ms → s
+    //console.log("Durée fournie pour CAF:", mediaInfo.streamDuration, "s");
   }
 
   const md = new cast.framework.messages.GenericMediaMetadata();
