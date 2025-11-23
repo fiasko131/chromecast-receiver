@@ -459,6 +459,8 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
   const mediaInfo = new cast.framework.messages.MediaInformation();
   mediaInfo.contentId = url;
   mediaInfo.contentType = contentType;
+  mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
+  
 
   // ⚡ Ajouter la durée si fournie (en secondes)
   if (durationMs > 0) {
