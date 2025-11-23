@@ -129,6 +129,8 @@ let displayingManualImage = false;
 let displayingManualVideo = false; // nouveau flag pour video gérée manuellement
 let firstImageShown = false;
 let v = null // video player;
+let currentAbortController = null;  // pour annuler la sonde HTML5 si nécessaire
+
 
 
 
@@ -456,10 +458,9 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     // ───────────────────────────────────────────────
     // 🔍 1. Fonction utilitaire : détecter la durée via HTML5
     // ───────────────────────────────────────────────
-    function probeDurationWithHTML5(url) {
+    function probeDurationWithHTML5(url, signal) {
       return new Promise((resolve, reject) => {
         const video = document.createElement("video");
-
         video.preload = "metadata";
         video.muted = true;
         video.src = url;
@@ -468,7 +469,9 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         function cleanup() {
           video.removeEventListener("loadedmetadata", onLoaded);
           video.removeEventListener("error", onError);
+          if (signal) signal.removeEventListener("abort", onAbort);
           video.src = "";
+          video.remove();
         }
 
         const onLoaded = () => {
@@ -483,18 +486,23 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           reject("HTML5 metadata load error");
         };
 
+        const onAbort = () => {
+          cleanup();
+          reject(new DOMException("Aborted", "AbortError"));
+        };
+
         video.addEventListener("loadedmetadata", onLoaded);
         video.addEventListener("error", onError);
+        if (signal) signal.addEventListener("abort", onAbort);
 
         document.body.appendChild(video);
       });
     }
 
-
     // ───────────────────────────────────────────────
     // 🎬 2. Fonction CAF avec détection automatique
     // ───────────────────────────────────────────────
-    async function loadVideoViaCAF(url, title = "Video", contentType = "video/mp4", durationMs = 0) {
+    async function loadVideoViaCAF(url, title = "Video", contentType = "video/mp4", durationMs = 0, signal = null) {
       console.log("🎬 [CAF] Chargement vidéo via PlayerManager:", url);
 
       let durationSec = 0;
@@ -504,20 +512,22 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         durationSec = durationMs / 1000;
         console.log("📌 Durée fournie par Android:", durationSec, "sec");
       } else {
-        // Sinon → on sonde en HTML5 (fiable et rapide)
+        // Sinon → on sonde en HTML5
         try {
           console.log("⏳ Sonde durée via HTML5…");
-          durationSec = await probeDurationWithHTML5(url);
+          durationSec = await probeDurationWithHTML5(url, signal);
           console.log("✅ Durée trouvée via HTML5:", durationSec, "sec");
         } catch (err) {
+          if (err.name === "AbortError") {
+            console.warn("⚠️ Sonde annulée");
+            return; // arrêt propre
+          }
           console.warn("⚠️ Impossible de détecter la durée HTML5:", err);
           durationSec = 0;
         }
       }
 
-      // ────────────────────────────────────────────
       // Construire MediaInfo pour CAF
-      // ────────────────────────────────────────────
       const mediaInfo = new cast.framework.messages.MediaInformation();
       mediaInfo.contentId = url;
       mediaInfo.contentType = contentType;
@@ -537,13 +547,14 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
 
       displayingManualVideo = false;
 
-      // Charger via CAF
-      playerManager.load(req)
-        .then(() => {
-          console.log("🎉 Lecture CAF OK");
-        })
-        .catch(e => console.error("❌ Erreur load CAF:", e));
+      try {
+        await playerManager.load(req);
+        console.log("🎉 Lecture CAF OK");
+      } catch (e) {
+        console.error("❌ Erreur load CAF:", e);
+      }
     }
+
 
     // ============================================================
     // 🔧 AJOUT VIDEO CAF : wrapper pour remplacer votre castLoadVideo
@@ -661,7 +672,14 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
             const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
             const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
             console.log("[RECEIVER] durationMs "+durationMs);
-            castLoadVideoCAF(urlToShow,"video",mimeType,0);
+            //castLoadVideoCAF(urlToShow,"video",mimeType,0);
+            if (currentAbortController) {
+               currentAbortController.abort();
+            }
+            currentAbortController = new AbortController();
+
+            // Lancer la nouvelle vidéo
+            loadVideoViaCAF(urlToShow, "video", mimeType, durationMs, currentAbortController.signal);
           } 
           else if (isAudioUrl(urlToShow)) {
             showAudioAtIndex(idxSet);
