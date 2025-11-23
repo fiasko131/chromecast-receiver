@@ -30,6 +30,7 @@ let videoProgressTimer = null;
 
 // ==================== IMAGE NAMESPACE & STATE ====================
 const IMAGE_NAMESPACE = 'urn:x-cast:com.wizu.images';
+let imagesSenderId = null;
 
 function sendImageUpdate(data) {
   try {
@@ -106,7 +107,7 @@ function sendStateInfoVideo() {
     }
   }
 
-  context.sendCustomMessage(IMAGE_NAMESPACE, {
+  context.sendCustomMessage(imagesSenderId,IMAGE_NAMESPACE, {
     type: "STATE_INFO_VIDEO",
     state: state,
     index: currentImageIndex,
@@ -442,6 +443,7 @@ function showAudioAtIndex(index) {
 // ==================== Reçoit messages images / playlist (CAF v3) ====================
 context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
   try {
+    imagesSenderId = event.senderId;
     const data = event.data;
     console.log("Message IMAGE reçu:", data);
 
@@ -1030,31 +1032,16 @@ playerManager.addEventListener(
 
 
     // 🔹 Envoi à Android via custom message
-    /*context.sendCustomMessage(IMAGE_NAMESPACE, {
+    context.sendCustomMessage(imagesSenderId,IMAGE_NAMESPACE, {
       type: 'PROGRESS',
       current: Math.round(currentTime * 1000),      // → ms
       duration: Math.round(mediaDuration * 1000)    // → ms
-    });*/
-     sendCustomMessageSafe(IMAGE_NAMESPACE, {
-      type: 'PROGRESS',
-      current: Math.round(currentTime * 1000),    // ms
-      duration: Math.round(mediaDuration * 1000)  // ms
     });
+     
   }
 );
 
-function sendCustomMessageSafe(namespace, payload) {
-    if (isCAFReady) {
-        try {
-            context.sendCustomMessage(namespace, payload);
-        } catch (err) {
-            console.error("[CAF] Erreur envoi message:", err);
-        }
-    } else {
-        // bufferise le message
-        messageBuffer.push({ namespace, payload });
-    }
-}
+
 
 
 // ==================== STATUS POUR PREMI7RE VIDEO CUSTOM ====================
