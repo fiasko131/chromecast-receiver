@@ -9,31 +9,7 @@ const playerManager = context.getPlayerManager();
 let firstVideoLoadReceived = false;
 let pendingVideoUrl = null;
 
-// pour simuler un load
-playerManager.setMessageInterceptor(
-  cast.framework.messages.MessageType.LOAD,
-  (loadRequest) => {
 
-    // 1️⃣ IMAGE → on bloque le player
-    if (loadRequest.media?.contentType?.startsWith("image/")) {
-        console.log("[RECEIVER] IMAGE interceptée → affichage manuel");
-        showImage(loadRequest.media?.contentId);
-        return null;
-    }
-
-    // 2️⃣ VIDEO → on libère le player CAF
-    console.log("[RECEIVER] VIDEO interceptée:", loadRequest.media?.contentId);
-    firstVideoLoadReceived = true;
-
-    // si une vidéo était en attente, on vérifie si c'est la bonne
-    if (pendingVideoUrl && pendingVideoUrl === loadRequest.media?.contentId) {
-        console.log("[RECEIVER] Lecture de la première vidéo après LOAD…");
-        pendingVideoUrl = null;
-    }
-
-    return loadRequest; // laisse CAF jouer la vidéo normalement
-  }
-);
 
 
 let mediaDuration = 0;                // durée du média en secondes
@@ -723,46 +699,60 @@ function displayFirstImage(url) {
 // On y ajoute un stop du player manuel si le LOAD n'est pas une image (pour éviter conflit)
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
-  loadRequestData => {
-    if (loadRequestData.media) {
-      // -------------------- DURÉE --------------------
-      // ⚡ Essayons d'abord la durée envoyée depuis Android via customData.durationMs
-      if (loadRequestData.media.customData && typeof loadRequestData.media.customData.durationMs === "number") {
-        mediaDuration = loadRequestData.media.customData.durationMs / 1000; // ms → s
-        console.log("Durée fournie depuis Android (customData.durationMs):", mediaDuration, "s");
-      } 
-      // ⚡ Sinon, on regarde si CAF fournit directement 'duration'
-      else if (typeof loadRequestData.media.duration === "number" && loadRequestData.media.duration > 0) {
-        mediaDuration = loadRequestData.media.duration;
-        console.log("Durée fournie via media.duration:", mediaDuration, "s");
-      } 
-      // ⚡ Sinon, CAF fournit 'streamDuration' dans certains cas
-      else if (typeof loadRequestData.media.streamDuration === "number" && loadRequestData.media.streamDuration > 0) {
-        mediaDuration = loadRequestData.media.streamDuration;
-        console.log("Durée fournie via media.streamDuration:", mediaDuration, "s");
-      } 
-      else {
-        mediaDuration = 0;
-        console.log("Durée du média non fournie, détection automatique.");
-      }
+  (loadRequest) => {
 
-      // -------------------- TYPE AUDIO/VIDÉO --------------------
-      if (loadRequestData.media.contentType) {
-        isAudioContent = loadRequestData.media.contentType.startsWith("audio/");
-        console.log("Type détecté:", loadRequestData.media.contentType, "=> isAudioContent =", isAudioContent);
-      } else {
-        isAudioContent = false;
-      }
-
-      // -------------------- CUSTOM DATA --------------------
-      if (loadRequestData.media.customData) {
-        const { customData } = loadRequestData.media;
-        console.log("En-têtes personnalisés reçus:", customData.headers);
-        loadRequestData.media.customData = customData;
-      }
+    // ============================================================
+    // 1️⃣ GESTION IMAGE : empêcher CAF de prendre le contrôle
+    // ============================================================
+    if (loadRequest.media?.contentType?.startsWith("image/")) {
+      console.log("[RECEIVER] IMAGE interceptée → affichage manuel");
+      showImage(loadRequest.media?.contentId);
+      return null; // block CAF player
     }
 
-    // ==================== MÉTADONNÉES ====================
+    // ============================================================
+    // 2️⃣ GESTION VIDEO : laisser CAF jouer
+    // ============================================================
+    console.log("[RECEIVER] VIDEO interceptée:", loadRequest.media?.contentId);
+    firstVideoLoadReceived = true;
+
+    if (pendingVideoUrl && pendingVideoUrl === loadRequest.media?.contentId) {
+      console.log("[RECEIVER] Lecture de la première vidéo après LOAD…");
+      pendingVideoUrl = null;
+    }
+
+    // ============================================================
+    // 3️⃣ RÉCUPÉRATION DE LA DURÉE
+    // ============================================================
+    mediaDuration = 0;
+
+    if (loadRequest.media.customData?.durationMs > 0) {
+      mediaDuration = loadRequest.media.customData.durationMs / 1000;
+      console.log("[DURATION] depuis customData.durationMs =", mediaDuration);
+    }
+    else if (typeof loadRequest.media.duration === "number" && loadRequest.media.duration > 0) {
+      mediaDuration = loadRequest.media.duration;
+      console.log("[DURATION] depuis media.duration =", mediaDuration);
+    }
+    else if (typeof loadRequest.media.streamDuration === "number" && loadRequest.media.streamDuration > 0) {
+      mediaDuration = loadRequest.media.streamDuration;
+      console.log("[DURATION] depuis media.streamDuration =", mediaDuration);
+    }
+    else {
+      console.log("[DURATION] aucune fournie → CAF devra la détecter");
+    }
+
+    // ============================================================
+    // 4️⃣ TYPE AUDIO OU VIDEO
+    // ============================================================
+    const ct = loadRequest.media?.contentType || "";
+    isAudioContent = ct.startsWith("audio/");
+    console.log("[TYPE] contentType =", ct, "isAudioContent =", isAudioContent);
+
+    // ============================================================
+    // 5️⃣ METADATA (titre, artiste, miniature…)
+    // ============================================================
+    const meta = loadRequest.media.metadata;
     const videoTitle = document.getElementById("video-title");
     const videoThumbnail = document.getElementById("video-thumbnail");
     const videoTitleSmall = document.getElementById("video-title-small");
@@ -773,48 +763,34 @@ playerManager.setMessageInterceptor(
     const audioArtist = document.getElementById("track-artist");
     const audioThumbnail = document.getElementById("audio-thumbnail");
 
-    if (loadRequestData.media.metadata) {
-      const meta = loadRequestData.media.metadata;
+    if (meta) {
       const titleText = meta.title || "In Progress...";
 
-      // --- Titre ---
-      if (videoTitle) videoTitle.textContent = titleText || "unknown title";
+      if (videoTitle) videoTitle.textContent = titleText;
       if (videoTitleSmall) videoTitleSmall.textContent = titleText;
       if (audioTitle) audioTitle.textContent = titleText;
 
-      // --- Album & Artiste (audio) ---
       if (audioAlbum) audioAlbum.textContent = "Album: " + (meta.albumName || "unknown");
       if (audioArtist) audioArtist.textContent = "Artist: " + (meta.artist || "unknown");
 
-      // --- Miniature ---
-      let imgUrl = "assets/placeholder.png";
-      if (Array.isArray(meta.images) && meta.images.length > 0 && meta.images[0].url) {
-        imgUrl = meta.images[0].url;
-      }
+      let imgUrl = meta.images?.[0]?.url || "assets/placeholder.png";
       if (videoThumbnail) videoThumbnail.src = imgUrl;
       if (videoThumbnailSmall) videoThumbnailSmall.src = imgUrl;
       if (audioThumbnail) audioThumbnail.src = imgUrl;
-    } else {
-      // ⚡ Valeurs par défaut
-      if (videoTitle) videoTitle.textContent = "En attente...";
-      if (videoThumbnail) videoThumbnail.src = "assets/placeholder.png";
-      if (videoTitleSmall) videoTitleSmall.textContent = "En attente...";
-      if (videoThumbnailSmall) videoThumbnailSmall.src = "assets/placeholder.png";
-      if (audioTitle) audioTitle.textContent = "En attente...";
-      if (audioAlbum) audioAlbum.textContent = "Album inconnu";
-      if (audioArtist) audioArtist.textContent = "Artiste inconnu";
-      if (audioThumbnail) audioThumbnail.src = "assets/placeholder.png";
     }
 
-    // -------------------- STOP LECTEUR MANUEL --------------------
-    const contentType = (loadRequestData.media && loadRequestData.media.contentType) ? loadRequestData.media.contentType : "";
-    if (contentType && !contentType.startsWith("image/")) {
+    // ============================================================
+    // 6️⃣ STOP MANUEL PLAYER
+    // ============================================================
+    if (!ct.startsWith("image/")) {
       stopManualVideoIfAny();
     }
 
-    return loadRequestData;
+    // Laisser CAF charger normalement
+    return loadRequest;
   }
 );
+
 
 
 // ==================== UI ELEMENTS ====================
