@@ -644,8 +644,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
                   pendingVideoUrl = first;
                   firstImageShown = true;
 
-                  // 🔧 AJOUT VIDEO CAF : le CAF gère autoplay
-                  pendingVideoUrl = null;
+                
 
               } else if (isAudioUrl(first)) {
                   showAudioAtIndex(currentImageIndex);
@@ -675,6 +674,11 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           const urlToShow = imageList[idxSet];
 
           if (isVideoUrl(urlToShow)) {
+             try {
+              playerManager.ended;
+            } catch (err) {
+                console.warn("Erreur play via CAF:", err);
+            }
             // 🔧 AJOUT VIDEO CAF
             const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
             const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
