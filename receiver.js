@@ -501,15 +501,17 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         break;
 
       case "PLAY_VIDEO":
-        if (playerManager && playerManager.getPlayerState() !== cast.framework.ui.State.PLAYING) {
-          playerManager.play().catch(err => console.warn("Erreur play via CAF:", err));
-        }
+        /*if (playerManager && playerManager.getPlayerState() !== cast.framework.ui.State.PLAYING) {
+         
+        }*/
+        playerManager.play().catch(err => console.warn("Erreur play via CAF:", err));
         break;
 
       case "PAUSE_VIDEO":
-        if (playerManager && playerManager.getPlayerState() === cast.framework.ui.State.PLAYING) {
-          playerManager.pause();
-        }
+        //if (playerManager && playerManager.getPlayerState() === cast.framework.ui.State.PLAYING) {
+          
+        //}
+        playerManager.pause();
         break;
 
         case "SEEK_VIDEO":
