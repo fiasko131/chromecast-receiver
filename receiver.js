@@ -1084,6 +1084,12 @@ playerManager.addEventListener(
       url: imageList[currentImageIndex]
     });*/
     // 🔹 Envoi via la fonction safe
+    /*sendCustomMessageSafe(IMAGE_NAMESPACE, {
+      type: 'PROGRESS',
+      current: Math.round(currentTime * 1000),    // ms
+      duration: Math.round(mediaDuration * 1000)  // ms
+    });*/
+    // 🔹 Envoi via la fonction safe
     sendCustomMessageSafe(IMAGE_NAMESPACE, {
       type: 'PROGRESS',
       current: Math.round(currentTime * 1000),    // ms
