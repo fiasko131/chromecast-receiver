@@ -725,28 +725,41 @@ playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   loadRequestData => {
     if (loadRequestData.media) {
-      if (typeof loadRequestData.media.duration === "number" && loadRequestData.media.duration > 0) {
+      // -------------------- DURÉE --------------------
+      // ⚡ Essayons d'abord la durée envoyée depuis Android via customData.durationMs
+      if (loadRequestData.media.customData && typeof loadRequestData.media.customData.durationMs === "number") {
+        mediaDuration = loadRequestData.media.customData.durationMs / 1000; // ms → s
+        console.log("Durée fournie depuis Android (customData.durationMs):", mediaDuration, "s");
+      } 
+      // ⚡ Sinon, on regarde si CAF fournit directement 'duration'
+      else if (typeof loadRequestData.media.duration === "number" && loadRequestData.media.duration > 0) {
         mediaDuration = loadRequestData.media.duration;
-        console.log("Durée du média fournie:", mediaDuration, "s");
-      } else {
+        console.log("Durée fournie via media.duration:", mediaDuration, "s");
+      } 
+      // ⚡ Sinon, CAF fournit 'streamDuration' dans certains cas
+      else if (typeof loadRequestData.media.streamDuration === "number" && loadRequestData.media.streamDuration > 0) {
+        mediaDuration = loadRequestData.media.streamDuration;
+        console.log("Durée fournie via media.streamDuration:", mediaDuration, "s");
+      } 
+      else {
         mediaDuration = 0;
         console.log("Durée du média non fournie, détection automatique.");
       }
 
-      // ⚡ Type audio ou vidéo
+      // -------------------- TYPE AUDIO/VIDÉO --------------------
       if (loadRequestData.media.contentType) {
         isAudioContent = loadRequestData.media.contentType.startsWith("audio/");
         console.log("Type détecté:", loadRequestData.media.contentType, "=> isAudioContent =", isAudioContent);
       } else {
         isAudioContent = false;
       }
-    }
 
-    // ⚡ CustomData
-    if (loadRequestData.media && loadRequestData.media.customData) {
-      const { customData } = loadRequestData.media;
-      console.log("En-têtes personnalisés reçus:", customData.headers);
-      loadRequestData.media.customData = customData;
+      // -------------------- CUSTOM DATA --------------------
+      if (loadRequestData.media.customData) {
+        const { customData } = loadRequestData.media;
+        console.log("En-têtes personnalisés reçus:", customData.headers);
+        loadRequestData.media.customData = customData;
+      }
     }
 
     // ==================== MÉTADONNÉES ====================
@@ -770,8 +783,8 @@ playerManager.setMessageInterceptor(
       if (audioTitle) audioTitle.textContent = titleText;
 
       // --- Album & Artiste (audio) ---
-      if (audioAlbum) audioAlbum.textContent = "Album: "+meta.albumName || "Album: unknown";
-      if (audioArtist) audioArtist.textContent = "Artist: "+meta.artist || "Artist: unknown";
+      if (audioAlbum) audioAlbum.textContent = "Album: " + (meta.albumName || "unknown");
+      if (audioArtist) audioArtist.textContent = "Artist: " + (meta.artist || "unknown");
 
       // --- Miniature ---
       let imgUrl = "assets/placeholder.png";
@@ -781,7 +794,6 @@ playerManager.setMessageInterceptor(
       if (videoThumbnail) videoThumbnail.src = imgUrl;
       if (videoThumbnailSmall) videoThumbnailSmall.src = imgUrl;
       if (audioThumbnail) audioThumbnail.src = imgUrl;
-
     } else {
       // ⚡ Valeurs par défaut
       if (videoTitle) videoTitle.textContent = "En attente...";
@@ -794,17 +806,16 @@ playerManager.setMessageInterceptor(
       if (audioThumbnail) audioThumbnail.src = "assets/placeholder.png";
     }
 
-    // Si le LOAD CAF est pour une vraie vidéo/audio, arrêter notre lecteur manuel si actif
+    // -------------------- STOP LECTEUR MANUEL --------------------
     const contentType = (loadRequestData.media && loadRequestData.media.contentType) ? loadRequestData.media.contentType : "";
     if (contentType && !contentType.startsWith("image/")) {
       stopManualVideoIfAny();
-      // vider la playlist custom pour éviter conflits si besoin
-      // imageList = []; // on garde la liste, à toi de décider si tu veux la vider
     }
 
     return loadRequestData;
   }
 );
+
 
 // ==================== UI ELEMENTS ====================
 // Vidéo
