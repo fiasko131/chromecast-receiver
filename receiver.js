@@ -1017,9 +1017,9 @@ playerManager.addEventListener(
 
     // 🔹 Envoi à Android via custom message
     context.sendCustomMessage(IMAGE_NAMESPACE, {
-        type: 'PROGRESS',
-        current: currentTime,
-        duration: mediaDuration
+      type: 'PROGRESS',
+      current: Math.round(currentTime * 1000),      // → ms
+      duration: Math.round(mediaDuration * 1000)    // → ms
     });
   }
 );
