@@ -1025,10 +1025,15 @@ playerManager.addEventListener(
 
 
     // 🔹 Envoi à Android via custom message
-    context.sendCustomMessage(IMAGE_NAMESPACE, {
+    /*context.sendCustomMessage(IMAGE_NAMESPACE, {
       type: 'PROGRESS',
       current: Math.round(currentTime * 1000),      // → ms
       duration: Math.round(mediaDuration * 1000)    // → ms
+    });*/
+     sendCustomMessageSafe(IMAGE_NAMESPACE, {
+      type: 'PROGRESS',
+      current: Math.round(currentTime * 1000),    // ms
+      duration: Math.round(mediaDuration * 1000)  // ms
     });
   }
 );
@@ -1077,24 +1082,14 @@ playerManager.addEventListener(
     console.log("[Video STATE] =>", status);
 
     // 🔃 Envoi au téléphone
-    /*context.sendCustomMessage(IMAGE_NAMESPACE, {
+    context.sendCustomMessage(IMAGE_NAMESPACE, {
       type: 'PLAYER_STATE',
       state: status,
       index: currentImageIndex,
       url: imageList[currentImageIndex]
-    });*/
-    // 🔹 Envoi via la fonction safe
-    /*sendCustomMessageSafe(IMAGE_NAMESPACE, {
-      type: 'PROGRESS',
-      current: Math.round(currentTime * 1000),    // ms
-      duration: Math.round(mediaDuration * 1000)  // ms
-    });*/
-    // 🔹 Envoi via la fonction safe
-    sendCustomMessageSafe(IMAGE_NAMESPACE, {
-      type: 'PROGRESS',
-      current: Math.round(currentTime * 1000),    // ms
-      duration: Math.round(mediaDuration * 1000)  // ms
     });
+    
+   
   }
 );
 
