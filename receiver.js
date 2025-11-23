@@ -1017,6 +1017,7 @@ playerManager.addEventListener(
     console.warn("[SEND TEST] context=", context);
     console.warn("[SEND TEST] sendCustomMessage exists:", typeof context.sendCustomMessage);
     console.warn("Receiver uses namespace:", IMAGE_NAMESPACE);
+   
 
 
     // 🔹 Envoi à Android via custom message
@@ -1069,9 +1070,8 @@ playerManager.addEventListener(
 
 // ==================== START RECEIVER ========================
 context.start();
-context.addEventListener(cast.framework.system.EventType.SYSTEM_STATE_CHANGED, (event) => {
-  console.warn("⚠️ SYSTEM STATE:", event.state);
-  if (event.state === cast.framework.system.SystemState.IDLE) {
-    console.error("🚨 Retour au logo détecté !");
-  }
+context.sendCustomMessage(IMAGE_NAMESPACE, {
+    type: "HELLO_FROM_RECEIVER"
 });
+console.log("[RECEIVER] HELLO sent");
+
