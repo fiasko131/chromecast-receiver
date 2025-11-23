@@ -1071,7 +1071,7 @@ playerManager.addEventListener(
 context.addEventListener(
   cast.framework.events.EventType.READY,
   () => {
-    console.log("[RECEIVER] CAF READY — messages peuvent maintenant être envoyés");
+    console.warn("[RECEIVER] CAF READY — messages peuvent maintenant être envoyés");
 
     // 🔹 Test HELLO
     context.sendCustomMessage(IMAGE_NAMESPACE, { type: "HELLO" });
