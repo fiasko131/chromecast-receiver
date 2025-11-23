@@ -87,8 +87,9 @@ function sendStateInfoVideo() {
   } else {
     // Récupérer l'état du player CAF
     const pmState = playerManager.getPlayerState(); // renvoie "IDLE", "PLAYING", "PAUSED", "BUFFERING"
-    console.warn("player state:", pmState);
-    switch(pmState) {
+    const stateStr = (typeof pmState === "string") ? pmState.trim() : String(pmState).trim();
+    console.warn("player state:", stateStr);
+    switch(stateStr) {
       case cast.framework.ui.State.PLAYING:
         state = "playing";
         break;
@@ -1078,22 +1079,7 @@ playerManager.addEventListener(
   }
 );
 
-context.addEventListener(
-    cast.framework.events.EventType.READY,
-    () => {
-        console.warn("[RECEIVER] CAF READY — messages peuvent maintenant être envoyés");
-        isCAFReady = true;
 
-        // 🔹 Envoyer tous les messages bufferisés
-        while (messageBuffer.length > 0) {
-            const { namespace, payload } = messageBuffer.shift();
-            context.sendCustomMessage(namespace, payload);
-        }
-
-        // 🔹 Test HELLO
-        sendCustomMessageSafe(IMAGE_NAMESPACE, { type: "HELLO" });
-    }
-);
 
 
 // ==================== START RECEIVER ========================
