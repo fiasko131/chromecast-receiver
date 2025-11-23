@@ -675,7 +675,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
 
           if (isVideoUrl(urlToShow)) {
              try {
-              playerManager.ended;
+              playerManager.pause();
             } catch (err) {
                 console.warn("Erreur play via CAF:", err);
             }
