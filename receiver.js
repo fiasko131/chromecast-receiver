@@ -504,8 +504,8 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     // ============================================================
     // 🔧 AJOUT VIDEO CAF : wrapper pour remplacer votre castLoadVideo
     // ============================================================
-    function castLoadVideoCAF(url) {
-      loadVideoViaCAF(url);  // simple délégation
+    function castLoadVideoCAF(url,title,mime,durationMs) {
+      loadVideoViaCAF(url,title,mime,durationMs);  // simple délégation
     }
 
     switch (data.type) {
@@ -570,6 +570,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
                   // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
                   const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
                   const durationMs = typeof data.durationMs === "number" ? data.durationMs : 0;
+                  console.log("[RECEIVER] durationMs "+durationMs);
                   castLoadVideoCAF(first,"video",mimeType,durationMs);
 
                   pendingVideoUrl = first;
