@@ -107,7 +107,7 @@ function sendStateInfoVideo() {
     }
   }
 
-  context.sendCustomMessage(imagesSenderId,IMAGE_NAMESPACE, {
+  context.sendCustomMessage(IMAGE_NAMESPACE,imagesSenderId, {
     type: "STATE_INFO_VIDEO",
     state: state,
     index: currentImageIndex,
@@ -1032,7 +1032,7 @@ playerManager.addEventListener(
 
 
     // 🔹 Envoi à Android via custom message
-    context.sendCustomMessage(imagesSenderId,IMAGE_NAMESPACE, {
+    context.sendCustomMessage(IMAGE_NAMESPACE,imagesSenderId, {
       type: 'PROGRESS',
       current: Math.round(currentTime * 1000),      // → ms
       duration: Math.round(mediaDuration * 1000)    // → ms
