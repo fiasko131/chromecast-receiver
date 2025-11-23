@@ -581,6 +581,10 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
               const cur = imageList[currentImageIndex];
               if (isVideoUrl(cur)) {
                   // 🔧 AJOUT VIDEO CAF
+                  const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
+                  const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
+                  console.log("[RECEIVER] durationMs "+durationMs);
+                  castLoadVideoCAF(first,"video",mimeType,durationMs);
                   castLoadVideoCAF(cur);
               } else {
                   showImageAtIndex(currentImageIndex);
