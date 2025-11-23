@@ -471,28 +471,35 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     // ============================================================
     // 🔧 AJOUT VIDEO CAF : fonction d’aide
     // ============================================================
-    function loadVideoViaCAF(url, title = "Video", contentType = "video/mp4") {
-      console.log("🎬 [CAF] Chargement vidéo via PlayerManager:", url);
+    function loadVideoViaCAF(url, title = "Video", contentType = "video/mp4", durationMs = 0) {
+  console.log("🎬 [CAF] Chargement vidéo via PlayerManager:", url);
 
-      const mediaInfo = new cast.framework.messages.MediaInformation();
-      mediaInfo.contentId = url;
-      mediaInfo.contentType = contentType;
+  const mediaInfo = new cast.framework.messages.MediaInformation();
+  mediaInfo.contentId = url;
+  mediaInfo.contentType = contentType;
 
-      const md = new cast.framework.messages.GenericMediaMetadata();
-      md.title = title;
-      mediaInfo.metadata = md;
+  // ⚡ Ajouter la durée si fournie (en secondes)
+  if (durationMs > 0) {
+    mediaInfo.streamDuration = durationMs / 1000; // convert ms → s
+    console.log("Durée fournie pour CAF:", mediaInfo.streamDuration, "s");
+  }
 
-      const req = new cast.framework.messages.LoadRequestData();
-      req.media = mediaInfo;
-      req.autoplay = true;
+  const md = new cast.framework.messages.GenericMediaMetadata();
+  md.title = title;
+  mediaInfo.metadata = md;
 
-      // empêche votre lecteur <video> d'interférer
-      displayingManualVideo = false;
+  const req = new cast.framework.messages.LoadRequestData();
+  req.media = mediaInfo;
+  req.autoplay = true;
 
-      playerManager.load(req).then(() => {
-        console.log("🎉 Lecture CAF OK");
-      }).catch(e => console.error("❌ Erreur load CAF:", e));
-    }
+  // empêche votre lecteur <video> d'interférer
+  displayingManualVideo = false;
+
+  playerManager.load(req).then(() => {
+    console.log("🎉 Lecture CAF OK");
+  }).catch(e => console.error("❌ Erreur load CAF:", e));
+}
+
 
     // ============================================================
     // 🔧 AJOUT VIDEO CAF : wrapper pour remplacer votre castLoadVideo
@@ -561,7 +568,9 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
                   console.log("[RECEIVER] Première vidéo → passage en mode CAF");
 
                   // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
-                  castLoadVideoCAF(first);
+                  const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
+                  const durationMs = typeof data.durationMs === "number" ? data.durationMs : 0;
+                  castLoadVideoCAF(first,"video",mimeType,durationMs);
 
                   pendingVideoUrl = first;
                   firstImageShown = true;
