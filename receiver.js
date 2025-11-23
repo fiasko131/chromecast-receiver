@@ -1024,13 +1024,6 @@ playerManager.addEventListener(
     currentTimeElem.textContent = formatTime(currentTime);
     totalTimeElem.textContent = formatTime(mediaDuration);
 
-    console.log(`[Video PROGRESS] currentTime=${currentTime.toFixed(1)}s | duration=${mediaDuration.toFixed(1)}s | pct=${pct.toFixed(2)}%`);
-    console.warn("[SEND TEST] context=", context);
-    console.warn("[SEND TEST] sendCustomMessage exists:", typeof context.sendCustomMessage);
-    console.warn("Receiver uses namespace:", IMAGE_NAMESPACE);
-   
-
-
     // 🔹 Envoi à Android via custom message
     context.sendCustomMessage(IMAGE_NAMESPACE,imagesSenderId, {
       type: 'PROGRESS',
@@ -1074,7 +1067,7 @@ playerManager.addEventListener(
     console.log("[Video STATE] =>", status);
 
     // 🔃 Envoi au téléphone
-    context.sendCustomMessage(IMAGE_NAMESPACE, {
+    context.sendCustomMessage(IMAGE_NAMESPACE,imagesSenderId, {
       type: 'PLAYER_STATE',
       state: status,
       index: currentImageIndex,
