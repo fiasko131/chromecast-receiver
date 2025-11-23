@@ -453,37 +453,97 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     // ============================================================
     // 🔧 AJOUT VIDEO CAF : fonction d’aide
     // ============================================================
-    function loadVideoViaCAF(url, title = "Video", contentType = "video/mp4", durationMs = 0) {
-  console.log("🎬 [CAF] Chargement vidéo via PlayerManager:", url);
+    // ───────────────────────────────────────────────
+    // 🔍 1. Fonction utilitaire : détecter la durée via HTML5
+    // ───────────────────────────────────────────────
+    function probeDurationWithHTML5(url) {
+      return new Promise((resolve, reject) => {
+        const video = document.createElement("video");
 
-  const mediaInfo = new cast.framework.messages.MediaInformation();
-  mediaInfo.contentId = url;
-  mediaInfo.contentType = contentType;
-  mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
-  
+        video.preload = "metadata";
+        video.muted = true;
+        video.src = url;
+        video.style.display = "none";
 
-  // ⚡ Ajouter la durée si fournie (en secondes)
-  if (durationMs > 0) {
-    //mediaInfo.streamDuration = durationMs / 1000; // convert ms → s
-    //console.log("Durée fournie pour CAF:", mediaInfo.streamDuration, "s");
-  }
+        function cleanup() {
+          video.removeEventListener("loadedmetadata", onLoaded);
+          video.removeEventListener("error", onError);
+          video.src = "";
+        }
 
-  const md = new cast.framework.messages.GenericMediaMetadata();
-  md.title = title;
-  mediaInfo.metadata = md;
+        const onLoaded = () => {
+          const d = video.duration;
+          cleanup();
+          if (!isNaN(d) && d > 0) resolve(d);
+          else reject("Invalid duration");
+        };
 
-  const req = new cast.framework.messages.LoadRequestData();
-  req.media = mediaInfo;
-  req.autoplay = true;
+        const onError = () => {
+          cleanup();
+          reject("HTML5 metadata load error");
+        };
 
-  // empêche votre lecteur <video> d'interférer
-  displayingManualVideo = false;
+        video.addEventListener("loadedmetadata", onLoaded);
+        video.addEventListener("error", onError);
 
-  playerManager.load(req).then(() => {
-    console.log("🎉 Lecture CAF OK");
-  }).catch(e => console.error("❌ Erreur load CAF:", e));
-}
+        document.body.appendChild(video);
+      });
+    }
 
+
+    // ───────────────────────────────────────────────
+    // 🎬 2. Fonction CAF avec détection automatique
+    // ───────────────────────────────────────────────
+    async function loadVideoViaCAF(url, title = "Video", contentType = "video/mp4", durationMs = 0) {
+      console.log("🎬 [CAF] Chargement vidéo via PlayerManager:", url);
+
+      let durationSec = 0;
+
+      // Si durée fournie → on la prend
+      if (durationMs > 0) {
+        durationSec = durationMs / 1000;
+        console.log("📌 Durée fournie par Android:", durationSec, "sec");
+      } else {
+        // Sinon → on sonde en HTML5 (fiable et rapide)
+        try {
+          console.log("⏳ Sonde durée via HTML5…");
+          durationSec = await probeDurationWithHTML5(url);
+          console.log("✅ Durée trouvée via HTML5:", durationSec, "sec");
+        } catch (err) {
+          console.warn("⚠️ Impossible de détecter la durée HTML5:", err);
+          durationSec = 0;
+        }
+      }
+
+      // ────────────────────────────────────────────
+      // Construire MediaInfo pour CAF
+      // ────────────────────────────────────────────
+      const mediaInfo = new cast.framework.messages.MediaInformation();
+      mediaInfo.contentId = url;
+      mediaInfo.contentType = contentType;
+      mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
+
+      if (durationSec > 0) {
+        mediaInfo.streamDuration = durationSec;  // ⭐ CAF a enfin la durée correcte
+      }
+
+      const meta = new cast.framework.messages.GenericMediaMetadata();
+      meta.title = title;
+      mediaInfo.metadata = meta;
+
+      const req = new cast.framework.messages.LoadRequestData();
+      req.media = mediaInfo;
+      req.autoplay = true;
+
+      displayingManualVideo = false;
+
+      // Charger via CAF
+      playerManager.load(req)
+        .then(() => {
+          console.log("🎉 Lecture CAF OK");
+        })
+        .catch(e => console.error("❌ Erreur load CAF:", e));
+    }
 
     // ============================================================
     // 🔧 AJOUT VIDEO CAF : wrapper pour remplacer votre castLoadVideo
@@ -561,7 +621,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
                   const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
                   const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
                   console.log("[RECEIVER] durationMs "+durationMs);
-                  castLoadVideoCAF(first,"video",mimeType,durationMs);
+                  castLoadVideoCAF(first,"video",mimeType,0);
 
                   pendingVideoUrl = first;
                   firstImageShown = true;
@@ -601,7 +661,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
             const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
             const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
             console.log("[RECEIVER] durationMs "+durationMs);
-            castLoadVideoCAF(urlToShow,"video",mimeType,durationMs);
+            castLoadVideoCAF(urlToShow,"video",mimeType,0);
           } 
           else if (isAudioUrl(urlToShow)) {
             showAudioAtIndex(idxSet);
