@@ -635,11 +635,11 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
                   //castLoadVideoCAF(first,"video",mimeType,0);
                   if (currentAbortController) {
                     currentAbortController.abort();
-            }
+                  }
                   currentAbortController = new AbortController();
 
                   // Lancer la nouvelle vidéo
-                  loadVideoViaCAF(urlToShow, "video", mimeType, durationMs, currentAbortController.signal);
+                  loadVideoViaCAF(first, "video", mimeType, durationMs, currentAbortController.signal);
 
                   pendingVideoUrl = first;
                   firstImageShown = true;
