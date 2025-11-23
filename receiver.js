@@ -88,7 +88,7 @@ function sendStateInfoVideo() {
     // Récupérer l'état du player CAF
     const pmState = playerManager.getPlayerState(); // renvoie "IDLE", "PLAYING", "PAUSED", "BUFFERING"
     const stateStr = (typeof pmState === "string") ? pmState.trim() : String(pmState).trim();
-    console.warn("player state:", stateStr);
+    console.warn("player state: stateStr", stateStr);
     switch(stateStr) {
       case cast.framework.ui.State.PLAYING:
         state = "playing";
