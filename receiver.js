@@ -86,25 +86,24 @@ function sendStateInfoVideo() {
     state = "none";
   } else {
     // Récupérer l'état du player CAF
-    const pmState = playerManager.getPlayerState(); // renvoie "IDLE", "PLAYING", "PAUSED", "BUFFERING"
-    const stateStr = (typeof pmState === "string") ? pmState.trim() : String(pmState).trim();
-    console.warn("player state: stateStr", stateStr);
+    const pmState = playerManager.getPlayerState();
+    const stateStr = String(pmState).trim(); // convertit en string, retire espaces invisibles
+
     switch(stateStr) {
-      case cast.framework.ui.State.PLAYING:
+      case "PLAYING":
         state = "playing";
         break;
-      case cast.framework.ui.State.PAUSED:
+      case "PAUSED":
         state = "paused";
         break;
-      case cast.framework.ui.State.BUFFERING:
+      case "BUFFERING":
         state = "buffering";
         break;
-      case cast.framework.ui.State.IDLE:
-        state = "none"; // ou "ended" si tu veux détecter fin
+      case "IDLE":
+        state = "none";
         break;
       default:
         state = "unknown";
-        break;
     }
   }
 
