@@ -536,6 +536,12 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       if (durationSec > 0) {
         mediaInfo.streamDuration = durationSec;  // ⭐ CAF a enfin la durée correcte
       }
+      // 🔹 première mise à jour
+      context.sendCustomMessage(IMAGE_NAMESPACE,imagesSenderId, {
+              type: 'PROGRESS',
+              current: 0,      // → ms
+              duration: durationSec*1000    // → ms
+            });     
 
       const meta = new cast.framework.messages.GenericMediaMetadata();
       meta.title = title;
@@ -680,6 +686,12 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
             } catch (err) {
                 console.warn("Erreur play via CAF:", err);
             }
+            // 🔹 remise à zéro progression
+            context.sendCustomMessage(IMAGE_NAMESPACE,imagesSenderId, {
+              type: 'PROGRESS',
+              current: 0,      // → ms
+              duration: 0    // → ms
+            });
             // 🔧 AJOUT VIDEO CAF
             const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
             const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
