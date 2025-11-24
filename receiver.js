@@ -286,6 +286,9 @@ function displayImage(url,newIndex) {
 
   // Met à jour l'élément image
   imageDisplay.src = url;
+  imgageDisplay.onload = () => {
+    animateImageSlide(newIndex); // lance l'animation une fois l'image chargée
+  };
 
   // Sécurité première image : empêche UI hidden trop tôt
   if (!firstImageShown) {
@@ -304,7 +307,7 @@ function displayImage(url,newIndex) {
   if (pauseIcon) pauseIcon.style.display = "none";
   if (audioPauseIcon) audioPauseIcon.style.display = "none";
   if (bottomUI) bottomUI.classList.remove("show");
-   animateImageSlide(newIndex);   // ← AJOUT ICI
+   //animateImageSlide(newIndex);   // ← AJOUT ICI
 }
 
 // -------------------- VIDEO / AUDIO manuel via <video id="player"> --------------------
