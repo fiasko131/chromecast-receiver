@@ -675,7 +675,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           const urlToShow = imageList[idxSet];
           try {
             if (playerManager){
-                playerManager.stop();
+                playerManager.pause();
             }   
           } catch (err) {
                 console.warn("Erreur stop via CAF:", err);
