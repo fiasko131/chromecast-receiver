@@ -133,6 +133,7 @@ let firstImageShown = false;
 let v = null // video player;
 let currentAbortController = null;  // pour annuler la sonde HTML5 si nécessaire
 let thumbUrl = null; // video thumnnailUrl pour custom
+let lastImageIndex = 0;
 
 
 
@@ -198,6 +199,7 @@ function preloadVideo(url) {
 
 // -------------------- Affichage (image) --------------------
 function showImageAtIndex(index) {
+  animateImageSlide(index);   // ← AJOUT ICI
   stopVideoProgressUpdates();
   if (!Array.isArray(imageList) || imageList.length === 0) return;
   if (index < 0) index = 0;
@@ -241,6 +243,56 @@ function showImageAtIndex(index) {
     }
   }
 }
+
+function animateImageSlide(newIndex) {
+    const img = document.getElementById("image-display");
+
+    /*if (isFirstImage) {
+        // Pas d’animation la première fois
+        isFirstImage = false;
+        lastImageIndex = newIndex;
+        return;
+    }*/
+
+    // Déterminer la direction
+    let enterClass = "";
+    let exitClass = "";
+
+    if (newIndex > lastImageIndex) {
+        // On avance → slide vers la gauche
+        enterClass = "slide-enter-from-right";
+        exitClass = "slide-exit-to-left";
+    } else if (newIndex < lastImageIndex) {
+        // On recule → slide vers la droite
+        enterClass = "slide-enter-from-left";
+        exitClass = "slide-exit-to-right";
+    } else {
+        return; // pas d'animation si même index
+    }
+
+    lastImageIndex = newIndex;
+
+    // Reset classes
+    img.classList.remove(
+        "slide-enter-from-right",
+        "slide-enter-from-left",
+        "slide-enter-active",
+        "slide-exit-to-left",
+        "slide-exit-to-right"
+    );
+
+    // État initial (offscreen)
+    img.classList.add(enterClass);
+
+    // On force un reflow pour que la transition démarre bien
+    void img.offsetWidth;
+
+    // Animation d’entrée
+    img.classList.add("slide-enter-active");
+
+    // Animation de sortie (aucun autre élément ici → juste décoratif)
+}
+
 
 // charge + affiche en garantissant le rendu (images)
 function preloadAndShow(url) {
@@ -650,6 +702,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
               const first = imageList[currentImageIndex];
 
               if (isImageUrl(first)) {
+                  lastImageIndex = startIndex;
                   displayFirstImage(first);
 
               } else if (isVideoUrl(first)) {
