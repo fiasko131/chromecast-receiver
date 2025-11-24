@@ -286,9 +286,9 @@ function displayImage(url,newIndex) {
 
   // Met à jour l'élément image
   imageDisplay.src = url;
-  imgageDisplay.onload = () => {
+  /*imgageDisplay.onload = () => {
     animateImageSlide(newIndex); // lance l'animation une fois l'image chargée
-  };
+  };*/
 
   // Sécurité première image : empêche UI hidden trop tôt
   if (!firstImageShown) {
