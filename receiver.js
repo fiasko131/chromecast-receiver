@@ -245,52 +245,21 @@ function showImageAtIndex(index) {
 }
 
 function animateImageSlide(newIndex) {
-    const img = document.getElementById("image-display");
+    const container = document.getElementById("image-ui");
 
-    /*if (isFirstImage) {
-        // Pas d’animation la première fois
-        isFirstImage = false;
-        lastImageIndex = newIndex;
-        return;
-    }*/
+    // Retirer toutes les classes précédentes
+    container.classList.remove("slide-in-right", "slide-in-left", "active");
 
-    // Déterminer la direction
-    let enterClass = "";
-    let exitClass = "";
+    // Déterminer la direction selon l’index
+    const direction = newIndex > currentImageIndex ? "right" : "left";
+    container.classList.add(`slide-in-${direction}`);
 
-    if (newIndex > lastImageIndex) {
-        // On avance → slide vers la gauche
-        enterClass = "slide-enter-from-right";
-        exitClass = "slide-exit-to-left";
-    } else if (newIndex < lastImageIndex) {
-        // On recule → slide vers la droite
-        enterClass = "slide-enter-from-left";
-        exitClass = "slide-exit-to-right";
-    } else {
-        return; // pas d'animation si même index
-    }
+    // forcer le reflow pour que la transition fonctionne
+    void container.offsetWidth;
 
+    // Activer la classe active pour lancer l’animation
+    container.classList.add("active");
     lastImageIndex = newIndex;
-
-    // Reset classes
-    img.classList.remove(
-        "slide-enter-from-right",
-        "slide-enter-from-left",
-        "slide-enter-active",
-        "slide-exit-to-left",
-        "slide-exit-to-right"
-    );
-
-    // État initial (offscreen)
-    img.classList.add(enterClass);
-
-    // On force un reflow pour que la transition démarre bien
-    void img.offsetWidth;
-
-    // Animation d’entrée
-    img.classList.add("slide-enter-active");
-
-    // Animation de sortie (aucun autre élément ici → juste décoratif)
 }
 
 
