@@ -661,7 +661,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
                   currentAbortController = new AbortController();
 
                   // Lancer la nouvelle vidéo
-                  loadVideoViaCAF(first, "video", mimeType, durationMs, currentAbortController.signal);
+                  loadVideoViaCAF(first, data.title, mimeType, durationMs, currentAbortController.signal);
 
                   pendingVideoUrl = first;
                   firstImageShown = true;
@@ -704,11 +704,12 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
 
           if (isVideoUrl(urlToShow)) {
             // on charge miniature si existe
-          const videoThumbnailSmall = document.getElementById("video-thumbnail-small");
-          const videoThumbnail = document.getElementById("video-thumbnail");
-          thumbUrl = data.thumbUrl ?? "assets/placeholder.png";
-          if (videoThumbnail) videoThumbnail.src = thumbUrl;
-          if (videoThumbnailSmall) videoThumbnailSmall.src = thumbUrl;
+            const videoThumbnailSmall = document.getElementById("video-thumbnail-small");
+            const videoThumbnail = document.getElementById("video-thumbnail");
+            thumbUrl = data.thumbUrl ?? "assets/placeholder.png";
+            if (videoThumbnail) videoThumbnail.src = thumbUrl;
+            if (videoThumbnailSmall) videoThumbnailSmall.src = thumbUrl;
+            // on remet les compteurs à 0
             context.sendCustomMessage(IMAGE_NAMESPACE,imagesSenderId, {
               type: 'PROGRESS',
               current: 0,      // → ms
@@ -726,7 +727,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
             currentAbortController = new AbortController();
 
             // Lancer la nouvelle vidéo
-            loadVideoViaCAF(urlToShow, "video", mimeType, durationMs, currentAbortController.signal);
+            loadVideoViaCAF(urlToShow, data.title, mimeType, durationMs, currentAbortController.signal);
           } 
           else if (isAudioUrl(urlToShow)) {
             showAudioAtIndex(idxSet);
