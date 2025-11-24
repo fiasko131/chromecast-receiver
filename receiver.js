@@ -578,10 +578,6 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         sendStateInfoVideo();
         break;
 
-      case "GET_THUMB_VIDEO":
-        sendStateInfoVideo();
-        break;
-
       case "PLAY_VIDEO":
         /*if (playerManager && playerManager.getPlayerState() !== cast.framework.ui.State.PLAYING) {
          
@@ -707,6 +703,12 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           }
 
           if (isVideoUrl(urlToShow)) {
+            // on charge miniature si existe
+          const videoThumbnailSmall = document.getElementById("video-thumbnail-small");
+          const videoThumbnail = document.getElementById("video-thumbnail");
+          thumbUrl = data.thumbUrl ?? "assets/placeholder.png";
+          if (videoThumbnail) videoThumbnail.src = thumbUrl;
+          if (videoThumbnailSmall) videoThumbnailSmall.src = thumbUrl;
             context.sendCustomMessage(IMAGE_NAMESPACE,imagesSenderId, {
               type: 'PROGRESS',
               current: 0,      // → ms
@@ -913,9 +915,9 @@ playerManager.setMessageInterceptor(
 
       if (audioAlbum) audioAlbum.textContent = "Album: " + (meta.albumName || "unknown");
       if (audioArtist) audioArtist.textContent = "Artist: " + (meta.artist || "unknown");
-
+      let imgUrl = meta.images?.[0]?.url || "assets/placeholder.png"; 
       if (thumbUrl == null) { // si thumbUrl custom n'est pas présente
-        let imgUrl = meta.images?.[0]?.url || "assets/placeholder.png";
+        
         if (videoThumbnail) videoThumbnail.src = imgUrl;
         if (videoThumbnailSmall) videoThumbnailSmall.src = imgUrl;
       }
