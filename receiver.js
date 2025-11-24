@@ -589,6 +589,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         case "SEEK_VIDEO":
           if (playerManager && typeof data.position === "number") {
             // ⚡ seek en secondes
+            console.log("seek to "+data.position/1000);
             playerManager.seek(data.position/1000);
           }
           break;
