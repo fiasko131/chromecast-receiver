@@ -199,7 +199,6 @@ function preloadVideo(url) {
 
 // -------------------- Affichage (image) --------------------
 function showImageAtIndex(index) {
-  animateImageSlide(index);   // ← AJOUT ICI
   stopVideoProgressUpdates();
   if (!Array.isArray(imageList) || imageList.length === 0) return;
   if (index < 0) index = 0;
@@ -213,9 +212,9 @@ function showImageAtIndex(index) {
   const startDisplay = () => {
     // vérif si déjà préchargée
     if (imageCache[url] && imageCache[url].complete) {
-      displayImage(url);
+      displayImage(url,index);
     } else {
-      preloadAndShow(url);
+      preloadAndShow(url,index);
     }
   };
 
@@ -264,21 +263,21 @@ function animateImageSlide(newIndex) {
 
 
 // charge + affiche en garantissant le rendu (images)
-function preloadAndShow(url) {
+function preloadAndShow(url,newIndex) {
   const img = new Image();
   img.onload = () => {
     imageCache[url] = img;
-    displayImage(url);
+    displayImage(url,newIndex);
   };
   img.onerror = (e) => {
     console.warn("preloadAndShow failed:", url, e);
-    displayImage(url); // tenter quand même (affichera erreur si corrompu)
+    displayImage(url,newIndex); // tenter quand même (affichera erreur si corrompu)
   };
   img.src = url;
 }
 
 // affiche vraiment l’image + UI
-function displayImage(url) {
+function displayImage(url,newIndex) {
   console.log("[RECEIVER] displayImage:", url);
 
   // Indique qu'on est en mode affichage manuel d'image
@@ -305,6 +304,7 @@ function displayImage(url) {
   if (pauseIcon) pauseIcon.style.display = "none";
   if (audioPauseIcon) audioPauseIcon.style.display = "none";
   if (bottomUI) bottomUI.classList.remove("show");
+   animateImageSlide(newIndex);   // ← AJOUT ICI
 }
 
 // -------------------- VIDEO / AUDIO manuel via <video id="player"> --------------------
