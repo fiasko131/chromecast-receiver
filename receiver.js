@@ -616,6 +616,11 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           thumbUrl = data.thumbUrl ?? "assets/placeholder.png";
           if (videoThumbnail) videoThumbnail.src = thumbUrl;
           if (videoThumbnailSmall) videoThumbnailSmall.src = thumbUrl;
+          // on charge le titre
+          const videoTitle = document.getElementById("video-title");
+          const videoTitleSmall = document.getElementById("video-title-small");
+          if (videoTitle) videoTitle.textContent = data.title;
+          if (videoTitleSmall) videoTitleSmall.textContent = data.title;
 
           imageList = data.urls.slice(); // clone
 
@@ -709,6 +714,11 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
             thumbUrl = data.thumbUrl ?? "assets/placeholder.png";
             if (videoThumbnail) videoThumbnail.src = thumbUrl;
             if (videoThumbnailSmall) videoThumbnailSmall.src = thumbUrl;
+            // on charge le titre
+            const videoTitle = document.getElementById("video-title");
+            const videoTitleSmall = document.getElementById("video-title-small");
+            if (videoTitle) videoTitle.textContent = data.title;
+            if (videoTitleSmall) videoTitleSmall.textContent = data.title;
             // on remet les compteurs à 0
             context.sendCustomMessage(IMAGE_NAMESPACE,imagesSenderId, {
               type: 'PROGRESS',
