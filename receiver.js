@@ -132,6 +132,7 @@ let displayingManualVideo = false; // nouveau flag pour video gérée manuelleme
 let firstImageShown = false;
 let v = null // video player;
 let currentAbortController = null;  // pour annuler la sonde HTML5 si nécessaire
+let thumbUrl = null; // video thumnnailUrl pour custom
 
 
 
@@ -546,6 +547,8 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
      
       const meta = new cast.framework.messages.GenericMediaMetadata();
       meta.title = title;
+      // ⭐ Ajouter la miniature
+      
       mediaInfo.metadata = meta;
 
       const req = new cast.framework.messages.LoadRequestData();
@@ -614,7 +617,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           // on charge miniature si existe
           const videoThumbnailSmall = document.getElementById("video-thumbnail-small");
           const videoThumbnail = document.getElementById("video-thumbnail");
-          let thumbUrl = data.thumbUrl ?? "assets/placeholder.png";
+          thumbUrl = data.thumbUrl ?? "assets/placeholder.png";
           if (videoThumbnail) videoThumbnail.src = thumbUrl;
           if (videoThumbnailSmall) videoThumbnailSmall.src = thumbUrl;
 
@@ -911,9 +914,12 @@ playerManager.setMessageInterceptor(
       if (audioAlbum) audioAlbum.textContent = "Album: " + (meta.albumName || "unknown");
       if (audioArtist) audioArtist.textContent = "Artist: " + (meta.artist || "unknown");
 
-      let imgUrl = meta.images?.[0]?.url || "assets/placeholder.png";
-      if (videoThumbnail) videoThumbnail.src = imgUrl;
-      if (videoThumbnailSmall) videoThumbnailSmall.src = imgUrl;
+      if (thumbUrl == null) { // si thumbUrl custom n'est pas présente
+        let imgUrl = meta.images?.[0]?.url || "assets/placeholder.png";
+        if (videoThumbnail) videoThumbnail.src = imgUrl;
+        if (videoThumbnailSmall) videoThumbnailSmall.src = imgUrl;
+      }
+      
       if (audioThumbnail) audioThumbnail.src = imgUrl;
     }
 
