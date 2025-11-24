@@ -826,7 +826,7 @@ function displayFirstImage(url) {
     request.media = mediaInfo;
 
     // 2️⃣ Intercepte le playerManager pour ne pas “jouer” l’image
-    playerManager.setMessageInterceptor(
+    /*playerManager.setMessageInterceptor(
         cast.framework.messages.MessageType.LOAD,
         (msg) => {
             if (msg.media && msg.media.contentType && msg.media.contentType.startsWith("image/")) {
@@ -838,7 +838,7 @@ function displayFirstImage(url) {
             stopManualVideoIfAny();
             return msg;
         }
-    );
+    );*/
 
     // 3️⃣ Affiche manuellement la première image dans le DOM
     imageDisplay.src = url;
