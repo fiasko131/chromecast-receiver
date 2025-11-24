@@ -575,6 +575,10 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         sendStateInfoVideo();
         break;
 
+      case "GET_THUMB_VIDEO":
+        sendStateInfoVideo();
+        break;
+
       case "PLAY_VIDEO":
         /*if (playerManager && playerManager.getPlayerState() !== cast.framework.ui.State.PLAYING) {
          
@@ -607,6 +611,13 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
         if (Array.isArray(data.urls)) {
+          // on charge miniature si existe
+          const videoThumbnailSmall = document.getElementById("video-thumbnail-small");
+          const videoThumbnail = document.getElementById("video-thumbnail");
+          let thumbUrl = data.thumbUrl ?? "assets/placeholder.png";
+          if (videoThumbnail) videoThumbnail.src = thumbUrl;
+          if (videoThumbnailSmall) videoThumbnailSmall.src = thumbUrl;
+
           imageList = data.urls.slice(); // clone
 
           const startIndex = (typeof data.index === 'number' && data.index >= 0) 
