@@ -111,7 +111,9 @@ function sendStateInfoVideo() {
     type: "STATE_INFO_VIDEO",
     state: state,
     index: currentImageIndex,
-    url: imageList[currentImageIndex]
+    url: imageList[currentImageIndex],
+    duration: Math.round(playerManager.getDurationSec() * 1000),
+    current: Math.round(playerManager.getCurrentTimeSec() * 1000)
   });
 }
 
@@ -583,7 +585,11 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         //if (playerManager && playerManager.getPlayerState() === cast.framework.ui.State.PLAYING) {
           
         //}
-        playerManager.pause();
+        try {
+          playerManager.pause();
+        } catch (err) {
+          console.warn("Erreur pause via CAF:", err);
+        }
         break;
 
         case "SEEK_VIDEO":
