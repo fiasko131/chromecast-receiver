@@ -536,13 +536,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       if (durationSec > 0) {
         mediaInfo.streamDuration = durationSec;  // ⭐ CAF a enfin la durée correcte
       }
-      // 🔹 première mise à jour
-      context.sendCustomMessage(IMAGE_NAMESPACE,imagesSenderId, {
-              type: 'PROGRESS',
-              current: 0,      // → ms
-              duration: durationSec*1000    // → ms
-            });     
-
+     
       const meta = new cast.framework.messages.GenericMediaMetadata();
       meta.title = title;
       mediaInfo.metadata = meta;
