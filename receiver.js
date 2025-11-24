@@ -673,19 +673,16 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           const idxSet = Math.min(Math.max(0, data.index), imageList.length - 1);
           currentImageIndex = idxSet;
           const urlToShow = imageList[idxSet];
+          try {
+            if (playerManager){
+                playerManager.stop();
+            }   
+          } catch (err) {
+                console.warn("Erreur stop via CAF:", err);
+          }
 
           if (isVideoUrl(urlToShow)) {
-             try {
-              playerManager.stop();
-            } catch (err) {
-                console.warn("Erreur play via CAF:", err);
-            }
-            // 🔹 remise à zéro progression
-            context.sendCustomMessage(IMAGE_NAMESPACE,imagesSenderId, {
-              type: 'PROGRESS',
-              current: 0,      // → ms
-              duration: 0    // → ms
-            });
+            
             // 🔧 AJOUT VIDEO CAF
             const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
             const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
