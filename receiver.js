@@ -630,12 +630,17 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
             // ⚡ seek en secondes
             console.log("seek to "+data.position/1000);
             playerManager.seek(data.position/1000);
+            const el = document.getElementById("progress-big-text");
+            el.classList.remove("show");
           }
           break;
       case "SEEK_VIDEO_PROGRESS_VISIBLE":
           stopVideoProgressTimer();
           showBottomUi();
           progressBar.style.width = data.percent + "%";
+          const el = document.getElementById("progress-big-text");
+          el.textContent = data.durationText;
+          el.classList.add("show");
        
         break;
       case 'LOAD_IMAGE_LIST':

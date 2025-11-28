@@ -297,3 +297,53 @@ body.playing #player {
   object-fit: contain;
 }
 
+/* Slide in depuis la droite */
+#image-ui.slide-in-right {
+  transform: translateX(100%);
+  opacity: 0;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+#image-ui.slide-in-right.active {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* Slide in depuis la gauche */
+#image-ui.slide-in-left {
+  transform: translateX(-100%);
+  opacity: 0;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+#image-ui.slide-in-left.active {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+#progress-big-text {
+  position: absolute;
+  top: 50%;                    /* centré verticalement */
+  left: 50%;                   /* centré horizontalement */
+  transform: translate(-50%, -50%);
+
+  width: 20%;                  /* ~20% de la largeur du player */
+  text-align: center;
+
+  font-size: 3vw;              /* responsive (taille varie selon largeur écran) */
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 12px black; /* lisible sur vidéo */
+
+  opacity: 0;                  /* invisible au départ */
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+#progress-big-text.show {
+  opacity: 1;
+}
+
+
+
+
