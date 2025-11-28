@@ -638,9 +638,9 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           stopVideoProgressTimer();
           showBottomUi();
           progressBar.style.width = data.percent + "%";
-          const el = document.getElementById("progress-big-text");
-          el.textContent = data.durationText;
-          el.classList.add("show");
+          //const el = document.getElementById("progress-big-text");
+          //el.textContent = data.durationText;
+          //el.classList.add("show");
        
         break;
       case 'LOAD_IMAGE_LIST':
