@@ -768,6 +768,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
             showAudioAtIndex(idxSet);
           } 
           else {
+            stopVideoProgressTimer();
             showImageAtIndex(idxSet);
           }
         } else {
@@ -1179,8 +1180,44 @@ playerManager.addEventListener(
   }
 );
 
+
+function startVideoProgressTimer() {
+  stopVideoProgressTimer(); // sécurité
+
+  videoProgressTimer = setInterval(() => {
+    if (!playerManager) return;
+
+    const current = playerManager.getCurrentTimeSec();
+    const duration = playerManager.getDurationSec();
+
+    if (!duration || duration <= 0) return;
+    if (isNaN(current)) return;
+
+    // Mise à jour UI Receiver
+    const pct = (current / duration) * 100;
+    progressBar.style.width = pct + "%";
+    currentTimeElem.textContent = formatTime(current);
+    totalTimeElem.textContent = formatTime(duration);
+
+    // Envoi côté Android (en ms)
+    context.sendCustomMessage(IMAGE_NAMESPACE, imagesSenderId, {
+      type: "PROGRESS",
+      current: Math.round(current * 1000),
+      duration: Math.round(duration * 1000)
+    });
+
+  }, 50); // 🔥 50 ms = super fluide
+}
+function stopVideoProgressTimer() {
+  if (videoProgressTimer) {
+    clearInterval(videoProgressTimer);
+    videoProgressTimer = null;
+  }
+}
+
+
 // ==================== PROGRESS POUR VIDEO ====================
-playerManager.addEventListener(
+/*playerManager.addEventListener(
   cast.framework.events.EventType.PROGRESS,
   (event) => {
     if (isAudioContent) return;  // AUDIO géré par timer
@@ -1204,7 +1241,7 @@ playerManager.addEventListener(
     });
      
   }
-);
+);*/
 
 
 
@@ -1235,6 +1272,15 @@ playerManager.addEventListener(
     } else {
       status = (typeof state === "string") ? state.toLowerCase() : "unknown";
     }
+    if (!isAudioContent){
+      if (state === "PLAYING"){
+        startVideoProgressTimer();
+      }
+      if (state === "PAUSED" || state === "IDLE"){
+        stopVideoProgressTimer();
+      }
+    }
+    
 
     console.log("[Video STATE] =>", status);
 
