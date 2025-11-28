@@ -1255,18 +1255,7 @@ playerManager.addEventListener(
   }
 );
 
-// Détection indirecte du SEEKED
-playerManager.addEventListener(
-  cast.framework.events.EventType.PLAYER_STATE_CHANGED,
-  (event) => {
-    if(isAudioContent) return;
-    if (seekingInProgress && event.playerState === cast.framework.ui.State.PLAYING) {
-      seekingInProgress = false;
-      startVideoProgressTimer();
-      showBottomUiTemporarily(); 
-    }
-  }
-);
+
 
 
 // ==================== STATUS POUR PREMI7RE VIDEO CUSTOM ====================
@@ -1297,6 +1286,10 @@ playerManager.addEventListener(
     }
     if (!isAudioContent){
       if (state === "PLAYING"){
+        if (seekingInProgress) {
+              seekingInProgress = false;
+              showBottomUiTemporarily();
+            }
         startVideoProgressTimer();
       }
       if (state === "PAUSED" || state === "IDLE"){
