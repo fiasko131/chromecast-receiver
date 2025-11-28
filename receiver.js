@@ -26,6 +26,7 @@ let audioCurrentTimeSec = 0;
 let audioTimer = null;
 let audioIsPlaying = false;
 let videoProgressTimer = null;
+let seekingInProgress = false;
 
 
 // ==================== IMAGE NAMESPACE & STATE ====================
@@ -1044,7 +1045,7 @@ function showBottomUiTemporarily() {
   if (hideProgressTimeout) clearTimeout(hideProgressTimeout);
   hideProgressTimeout = setTimeout(() => {
     if (lastPlayerState !== cast.framework.ui.State.PAUSED) bottomUI.classList.remove("show");
-  }, 2000);
+  }, 5000);
 }
 
 // ==================== PLAYER STATE ====================
@@ -1206,7 +1207,7 @@ function startVideoProgressTimer() {
       duration: Math.round(duration * 1000)
     });
 
-  }, 100); // 🔥 50 ms = super fluide
+  }, 50); // 🔥 50 ms = super fluide
 }
 function stopVideoProgressTimer() {
   if (videoProgressTimer) {
@@ -1244,6 +1245,28 @@ function stopVideoProgressTimer() {
 );*/
 
 
+playerManager.addEventListener(
+  cast.framework.events.EventType.SEEKING,
+  () => {
+    if(isAudioContent) return;
+    seekingInProgress = true;
+    stopVideoProgressTimer();
+    showBottomUiTemporarily();
+  }
+);
+
+// Détection indirecte du SEEKED
+playerManager.addEventListener(
+  cast.framework.events.EventType.PLAYER_STATE_CHANGED,
+  (event) => {
+    if(isAudioContent) return;
+    if (seekingInProgress && event.playerState === cast.framework.ui.State.PLAYING) {
+      seekingInProgress = false;
+      startVideoProgressTimer();
+      showBottomUiTemporarily(); 
+    }
+  }
+);
 
 
 // ==================== STATUS POUR PREMI7RE VIDEO CUSTOM ====================
@@ -1296,7 +1319,11 @@ playerManager.addEventListener(
   }
 );
 
-
+// =================== CLICK LISTENER ========================
+document.addEventListener("click", () => {
+  if(isAudioContent || displayingManualImage) return;
+  showBottomUI();
+});
 
 
 // ==================== START RECEIVER ========================
