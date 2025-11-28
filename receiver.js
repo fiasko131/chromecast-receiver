@@ -630,8 +630,8 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
             // ⚡ seek en secondes
             console.log("seek to "+data.position/1000);
             playerManager.seek(data.position/1000);
-            const el = document.getElementById("progress-big-text");
-            el.classList.remove("show");
+            //const el = document.getElementById("progress-big-text");
+            //el.classList.remove("show");
           }
           break;
       case "SEEK_VIDEO_PROGRESS_VISIBLE":
