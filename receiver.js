@@ -632,6 +632,12 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
             playerManager.seek(data.position/1000);
           }
           break;
+      case "SEEK_VIDEO_PROGRESS_VISIBLE":
+          stopVideoProgressTimer();
+          showBottomUi();
+          progressBar.style.width = data.percent + "%";
+       
+        break;
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
         if (Array.isArray(data.urls)) {
@@ -1046,6 +1052,10 @@ function showBottomUiTemporarily() {
   hideProgressTimeout = setTimeout(() => {
     if (lastPlayerState !== cast.framework.ui.State.PAUSED) bottomUI.classList.remove("show");
   }, 5000);
+}
+
+function showBottomUi() {
+  bottomUI.classList.add("show");
 }
 
 // ==================== PLAYER STATE ====================
