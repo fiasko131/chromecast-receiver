@@ -1206,7 +1206,7 @@ function startVideoProgressTimer() {
       duration: Math.round(duration * 1000)
     });
 
-  }, 50); // 🔥 50 ms = super fluide
+  }, 100); // 🔥 50 ms = super fluide
 }
 function stopVideoProgressTimer() {
   if (videoProgressTimer) {
