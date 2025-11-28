@@ -321,28 +321,31 @@ body.playing #player {
   opacity: 1;
 }
 
+
 #progress-big-text {
   position: absolute;
-  top: 50%;                    /* centré verticalement */
-  left: 50%;                   /* centré horizontalement */
-  transform: translate(-50%, -50%);
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
 
-  width: 20%;                  /* ~20% de la largeur du player */
+  width: 20vw;
   text-align: center;
 
-  font-size: 3vw;              /* responsive (taille varie selon largeur écran) */
+  font-size: 6vw;
   font-weight: bold;
   color: white;
-  text-shadow: 0 0 12px black; /* lisible sur vidéo */
 
-  opacity: 0;                  /* invisible au départ */
-  pointer-events: none;
+  opacity: 0;
   transition: opacity 0.3s ease;
+
+  pointer-events: none;
+  z-index: 9999;
 }
 
 #progress-big-text.show {
   opacity: 1;
 }
+
 
 
 

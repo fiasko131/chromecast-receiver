@@ -639,7 +639,9 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           showBottomUi();
           progressBar.style.width = data.percent + "%";
           const el = document.getElementById("progress-big-text");
+          console.log("EL ?", el);
           el.textContent = data.durationText;
+          console.log("TEXT ?", data.durationText);
           el.classList.add("show");
        
         break;
