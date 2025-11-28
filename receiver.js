@@ -1058,10 +1058,10 @@ function handlePlayerState(state) {
     return;
   }
   // Si on affiche manuellement une video via notre <video>, on ignore aussi certains états CAF
-  if (displayingManualVideo && (state === cast.framework.ui.State.IDLE || state === cast.framework.ui.State.LAUNCHING)) {
+  /*if (displayingManualVideo && (state === cast.framework.ui.State.IDLE || state === cast.framework.ui.State.LAUNCHING)) {
     console.log("[RECEIVER] Ignorer state CAF car affichage manuel video");
     return;
-  }
+  }*/
 
   // Masque image si lecture audio ou vidéo
   if (imageUI) imageUI.style.display = "none";
