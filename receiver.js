@@ -143,8 +143,24 @@ let lastImageIndex = 0;
 // -------------------- Helpers type de média --------------------
 // Détection par suffixe/url comme demandé : /v pour vidéo, /a pour audio
 function isVideoUrl(url) {
-  return url && url.indexOf("/v") !== -1;
+  if (!url) return false;
+
+  try {
+    const u = new URL(url);
+
+    // Condition 1 : l'URL contient /v
+    const hasV = u.pathname.endsWith("/v") || u.pathname.includes("/v/");
+
+    // Condition 2 : le port est 9020
+    const isPort9020 = u.port === "9020";
+
+    return hasV || isPort9020;
+  } catch (e) {
+    // URL invalide → fallback ancienne méthode
+    return url.includes("/v") || url.includes(":9020");
+  }
 }
+
 function isAudioUrl(url) {
   return url && url.indexOf("/a") !== -1;
 }
