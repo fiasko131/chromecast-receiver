@@ -1351,7 +1351,8 @@ document.addEventListener("click", () => {
   showBottomUI();
 });
 
-
+// Définir le timeout à 1 heure (3600 secondes)
+context.setInactivityTimeout(3600);
 // ==================== START RECEIVER ========================
 context.start();
 
