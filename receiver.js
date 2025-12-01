@@ -8,6 +8,7 @@ const playerManager = context.getPlayerManager();
 // pour la première video en mode custom
 let firstVideoLoadReceived = false;
 let pendingVideoUrl = null;
+let phoneIpAndPort = null; // Variable globale pour stocker l'hôte
 
 let isCAFReady = false;
 const messageBuffer = [];  // stocke tous les messages à envoyer
@@ -709,6 +710,17 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
                   displayFirstImage(first);
 
               } else if (isVideoUrl(first)) {
+                  if (firstUrl.startsWith('http://') && firstUrl.includes('192.168.')) {
+        
+                      // Trouver la partie Hôte:Port (ex: 192.168.x.x:9010)
+                      // L'URL est http://hôte:port/chemin...
+                      const protocolEndIndex = firstUrl.indexOf('://') + 3;
+                      const pathStartIndex = firstUrl.indexOf('/', protocolEndIndex);
+                      
+                      // Extrait '192.168.x.x:9010'
+                      phoneIpAndPort = firstUrl.substring(protocolEndIndex, pathStartIndex); 
+                      console.log("[RECEIVER] Local Host Extrait:", phoneIpAndPort);
+                  }
                   console.log("[RECEIVER] Première vidéo → passage en mode CAF");
                   console.log("[RECEIVER] durationMs "+data.durationms);
                   // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
@@ -911,6 +923,39 @@ function displayFirstImage(url) {
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   (loadRequest) => {
+    const mediaInfo = loadRequest.media;
+    const contentUrl = mediaInfo?.contentId;
+    // ============================================================
+    // 1.5 TRADUCTION URL HLS (Ajout pour le streaming local) 💡
+    // ============================================================
+    // Vérifiez si l'URL est la forme HTTP locale problématique et que l'IP est connue.
+        if (contentUrl && contentUrl.startsWith("http://") && contentUrl.endsWith(".m3u8") && contentUrl.includes("192.168.") && phoneIpAndPort) {
+            
+            console.log("[RECEIVER] Interception URL locale HLS.");
+            
+            // 1. Trouver l'index du début du chemin (/storage/...)
+            // Cherche la troisième barre oblique (après http://192.168.x.x:9010)
+            const pathStartIndex = contentUrl.indexOf('/', contentUrl.indexOf('://') + 3);
+            
+            if (pathStartIndex > 0) {
+                const mediaPath = contentUrl.substring(pathStartIndex); // /storage/emulated/...
+                
+                // 2. Créer l'URL factice
+                const fakeUrl = '/localstream' + mediaPath;
+                
+                // 3. Mettre à jour contentId avec l'URL factice (HTTPS-compatible)
+                mediaInfo.contentId = fakeUrl;
+
+                // 4. Injecter l'adresse réelle dans customData pour l'intercepteur de segments
+                if (!mediaInfo.customData) mediaInfo.customData = {};
+                mediaInfo.customData.localHost = phoneIpAndPort;
+
+                console.log(`[HLS TRADUCTION] Traduit ${contentUrl} vers ${fakeUrl}`);
+            } else {
+                console.error("[HLS TRADUCTION] Impossible d'analyser le chemin de l'URL locale.");
+            }
+        }
+        
 
     // ============================================================
     // 1️⃣ GESTION IMAGE : empêcher CAF de prendre le contrôle
@@ -1004,6 +1049,34 @@ playerManager.setMessageInterceptor(
     return loadRequest;
   }
 );
+
+// Définition de l'intercepteur de segments (Doit être appelé avant context.start())
+
+// 2. Utilisez la configuration EXISTANTE pour ne pas écraser d'autres réglages.
+let playbackConfig = playerManager.getPlaybackConfig() || new cast.framework.PlaybackConfig();
+
+playbackConfig.segmentHandler = (segmentUrl) => {
+    
+    // Le lecteur demande un segment basé sur l'URL factice /localstream/...
+    if (segmentUrl.startsWith('/localstream')) { 
+        
+        const mediaInfo = context.getPlayerManager().getMediaInformation();
+        const localHost = mediaInfo?.customData?.localHost;
+
+        if (localHost) {
+            // Reconstruire l'URL HTTP complète pour le segment
+            let realUrl = 'http://' + localHost + segmentUrl.replace('/localstream', '');
+            
+            // console.log('[SEGMENT TRANSLATION] Segment:', realUrl); // Décommenter pour debug
+            return realUrl; 
+        }
+    }
+    return segmentUrl; 
+};
+
+// Appliquer la configuration au contexte
+context.setPlaybackConfig(playbackConfig);
+// context.start(); // Si start n'est pas déjà appelé
 
 
 
