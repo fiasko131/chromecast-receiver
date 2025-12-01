@@ -1050,50 +1050,63 @@ playerManager.setMessageInterceptor(
   }
 );
 
+// =========================================================
+// 3. ÉVÉNEMENT PLAYER_LOADING (Le Pont de Traduction)
+//    Injecte la configuration Shaka Player (URI Resolver)
+// =========================================================
 playerManager.addEventListener(
     cast.framework.events.EventType.PLAYER_LOADING,
     (event) => {
+        
+        // ⭐ SÉCURISATION 1 : Vérifie que les données d'événement existent
+        if (!event.data) {
+            console.warn("[PLAYER_LOADING] Event data is null/undefined. Skipping config.");
+            return;
+        }
+        
         const loadRequestData = event.data;
         const mediaInfo = loadRequestData.media;
+        
+        // ⭐ SÉCURISATION 2 : Vérifie que l'objet média existe
+        if (!mediaInfo || !mediaInfo.contentId) {
+            console.warn("[PLAYER_LOADING] Media info missing. Skipping config.");
+            return;
+        }
 
-        // Assurez-vous que l'hôte a été correctement stocké
-        const localHost = mediaInfo?.customData?.localHost;
+        const localHost = mediaInfo.customData?.localHost;
 
         // VÉRIFICATION CRITIQUE : Est-ce notre URL factice ET avons-nous l'hôte ?
         if (localHost && mediaInfo.contentId.startsWith('/localstream')) {
             
-            console.log('[SHAKA CONFIG] Détection de flux local. Préparation à la traduction d’URL.');
+            console.log('[SHAKA CONFIG] Détection de flux local. Injection de la traduction d’URL.');
             
             const shakaConfig = {
                 uri: {
+                    // Cette fonction se déclenche pour TOUTES les requêtes (manifeste et segments)
                     resolver: (uri) => {
-                        // VÉRIFICATION CRITIQUE : Sécuriser l'URI
+                        
+                        // ⭐ SÉCURISATION 3 : Vérifie que l'URI est une chaîne et contient le préfixe factice
                         if (typeof uri === 'string' && uri.startsWith('/localstream')) {
                             
-                            // Récupérer l'hôte une seconde fois (méthode sécurisée)
-                            // Ceci est critique si l'hôte n'est pas directement dans la portée
-                            const currentMediaInfo = playerManager.getMediaInformation();
-                            const currentLocalHost = currentMediaInfo?.customData?.localHost || localHost;
+                            // On peut utiliser le 'localHost' capturé dans la portée supérieure (closure)
+                            const realUrl = 'http://' + localHost + uri.replace('/localstream', '');
+                            console.log('[SHAKA RESOLVER] Traduction: ' + uri + ' -> ' + realUrl);
                             
-                            if (currentLocalHost) {
-                                const realUrl = 'http://' + currentLocalHost + uri.replace('/localstream', '');
-                                console.log('[SHAKA RESOLVER] Traduction: ' + uri + ' -> ' + realUrl);
-                                return { uri: realUrl };
-                            }
+                            return { uri: realUrl };
                         }
-                        return null;
+                        return null; // Laisse Shaka gérer l'URI par défaut
                     }
                 }
             };
             
-            // Stocker la config pour Shaka
+            // Injecter la configuration Shaka Player dans le customData du LOAD
             loadRequestData.media.customData = loadRequestData.media.customData || {};
             loadRequestData.media.customData.shakaConfig = shakaConfig;
             
             console.log('[SHAKA CONFIG] Configuration de résolution d\'URL injectée.');
         }
         
-        // 🚨 IMPORTANT : NE RETOURNEZ RIEN ici, le gestionnaire d'événements est asynchrone.
+        // C'est un Event Listener, on modifie l'objet en place.
     }
 );
 
