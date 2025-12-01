@@ -929,7 +929,7 @@ playerManager.setMessageInterceptor(
     // 1.5 TRADUCTION URL HLS (Ajout pour le streaming local) 💡
     // ============================================================
     // Vérifiez si l'URL est la forme HTTP locale problématique et que l'IP est connue.
-        if (contentUrl && contentUrl.startsWith("http://") && contentUrl.endsWith(".m3u8") && contentUrl.includes("192.168.") && phoneIpAndPort) {
+        /*if (contentUrl && contentUrl.startsWith("http://") && contentUrl.endsWith(".m3u8") && contentUrl.includes("192.168.") && phoneIpAndPort) {
             
             console.log("[RECEIVER] Interception URL locale HLS.");
             
@@ -954,7 +954,7 @@ playerManager.setMessageInterceptor(
             } else {
                 console.error("[HLS TRADUCTION] Impossible d'analyser le chemin de l'URL locale.");
             }
-        }
+        }*/
         
 
     // ============================================================
