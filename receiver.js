@@ -149,7 +149,7 @@ function isVideoUrl(url) {
     const u = new URL(url);
 
     // Condition 1 : l'URL contient /v
-    const hasV = u.pathname.endsWith("/v") || u.pathname.includes("/v/");
+    const hasV = u.pathname.endsWith("/v") || u.pathname.endsWith(".m3u8") || u.pathname.includes("/v/");
 
     // Condition 2 : le port est 9020
     const isPort9020 = u.port === "9020";
