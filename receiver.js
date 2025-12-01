@@ -1054,7 +1054,7 @@ playerManager.setMessageInterceptor(
 // 3. ÉVÉNEMENT PLAYER_LOADING (Le Pont de Traduction)
 //    Injecte la configuration Shaka Player (URI Resolver)
 // =========================================================
-playerManager.addEventListener(
+/*playerManager.addEventListener(
     cast.framework.events.EventType.PLAYER_LOADING,
     (event) => {
         console.log("[PLAYER_LOADING TÉMOIN] L'événement est déclenché.");
@@ -1108,12 +1108,12 @@ playerManager.addEventListener(
         
         // C'est un Event Listener, on modifie l'objet en place.
     }
-);
+);*/
 
 // Définition de l'intercepteur de segments (Doit être appelé avant context.start())
 
 // 2. Utilisez la configuration EXISTANTE pour ne pas écraser d'autres réglages.
-let playbackConfig = playerManager.getPlaybackConfig() || new cast.framework.PlaybackConfig();
+/*let playbackConfig = playerManager.getPlaybackConfig() || new cast.framework.PlaybackConfig();
 
 playbackConfig.segmentHandler = (segmentUrl) => {
   console.log('[SEGMENT TRANSLATION] Segment:', segmentUrl);
@@ -1138,7 +1138,7 @@ playbackConfig.segmentHandler = (segmentUrl) => {
 };
 
 // 5. Appliquer la configuration au PlayerManager (LA CORRECTION)
-playerManager.setPlaybackConfig(playbackConfig);
+playerManager.setPlaybackConfig(playbackConfig);*/
 
 
 
