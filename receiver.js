@@ -1056,7 +1056,9 @@ playerManager.setMessageInterceptor(
 let playbackConfig = playerManager.getPlaybackConfig() || new cast.framework.PlaybackConfig();
 
 playbackConfig.segmentHandler = (segmentUrl) => {
-    
+    if (typeof segmentUrl !== 'string' || segmentUrl === null) {
+        return segmentUrl; // Retourne la valeur non-string sans la modifier
+    }
     // Le lecteur demande un segment basé sur l'URL factice /localstream/...
     if (segmentUrl.startsWith('/localstream')) { 
         
