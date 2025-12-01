@@ -1050,6 +1050,53 @@ playerManager.setMessageInterceptor(
   }
 );
 
+playerManager.addEventListener(
+    cast.framework.events.EventType.PLAYER_LOADING,
+    (event) => {
+        const loadRequestData = event.data;
+        const mediaInfo = loadRequestData.media;
+
+        // Assurez-vous que l'hôte a été correctement stocké
+        const localHost = mediaInfo?.customData?.localHost;
+
+        // VÉRIFICATION CRITIQUE : Est-ce notre URL factice ET avons-nous l'hôte ?
+        if (localHost && mediaInfo.contentId.startsWith('/localstream')) {
+            
+            console.log('[SHAKA CONFIG] Détection de flux local. Préparation à la traduction d’URL.');
+            
+            const shakaConfig = {
+                uri: {
+                    resolver: (uri) => {
+                        // VÉRIFICATION CRITIQUE : Sécuriser l'URI
+                        if (typeof uri === 'string' && uri.startsWith('/localstream')) {
+                            
+                            // Récupérer l'hôte une seconde fois (méthode sécurisée)
+                            // Ceci est critique si l'hôte n'est pas directement dans la portée
+                            const currentMediaInfo = playerManager.getMediaInformation();
+                            const currentLocalHost = currentMediaInfo?.customData?.localHost || localHost;
+                            
+                            if (currentLocalHost) {
+                                const realUrl = 'http://' + currentLocalHost + uri.replace('/localstream', '');
+                                console.log('[SHAKA RESOLVER] Traduction: ' + uri + ' -> ' + realUrl);
+                                return { uri: realUrl };
+                            }
+                        }
+                        return null;
+                    }
+                }
+            };
+            
+            // Stocker la config pour Shaka
+            loadRequestData.media.customData = loadRequestData.media.customData || {};
+            loadRequestData.media.customData.shakaConfig = shakaConfig;
+            
+            console.log('[SHAKA CONFIG] Configuration de résolution d\'URL injectée.');
+        }
+        
+        // 🚨 IMPORTANT : NE RETOURNEZ RIEN ici, le gestionnaire d'événements est asynchrone.
+    }
+);
+
 /*// Définition de l'intercepteur de segments (Doit être appelé avant context.start())
 
 // 2. Utilisez la configuration EXISTANTE pour ne pas écraser d'autres réglages.
@@ -1366,57 +1413,7 @@ playerManager.addEventListener(
   }
 );
 
-// Remplacez votre tentative d'utiliser setRequestInterceptor par ce bloc
 
-playerManager.addEventListener(
-    cast.framework.events.EventType.PLAYER_LOADING,
-    (event) => {
-        // L'objet 'event.data' contient les données de la requête LOAD
-        const loadRequestData = event.data;
-        const mediaInfo = loadRequestData.media;
-
-        // On vérifie si nous avons des customData contenant notre hôte local
-        // Cet hôte a été stocké par l'intercepteur LOAD (Étape 1 précédente)
-        const localHost = mediaInfo?.customData?.localHost;
-
-        // VÉRIFICATION CRITIQUE : Est-ce notre URL factice ?
-        if (localHost && mediaInfo.contentId.startsWith('/localstream')) {
-            
-            console.log('[SHAKA CONFIG] Détection de flux local. Préparation à la traduction d’URL.');
-            
-            // --- DÉFINITION DE LA LOGIQUE DE TRADUCTION POUR SHAKA ---
-            const shakaConfig = {
-                // Utilisation du Resolver d'URI de Shaka pour intercepter toutes les requêtes
-                uri: {
-                    resolver: (uri) => {
-                        // Cette fonction se déclenche pour TOUS les chemins de médias (.m3u8 et .ts)
-                        if (uri.startsWith('/localstream')) {
-                            
-                            // Reconstruire l'URL HTTP réelle
-                            const realUrl = 'http://' + localHost + uri.replace('/localstream', '');
-                            console.log('[SHAKA RESOLVER] Traduction: ' + uri + ' -> ' + realUrl);
-                            
-                            // Retourner l'objet de résolution avec l'URL réelle
-                            return { uri: realUrl };
-                        }
-                        // Important : pour les autres URI (si Shaka gère autre chose), ne rien faire
-                        return null;
-                    }
-                }
-            };
-            // --- FIN LOGIQUE DE TRADUCTION ---
-
-            // Injecter cette configuration dans le customData du LOAD pour que Shaka la prenne en compte
-            loadRequestData.media.customData = loadRequestData.media.customData || {};
-            loadRequestData.media.customData.shakaConfig = shakaConfig;
-            
-            console.log('[SHAKA CONFIG] Configuration de résolution d\'URL injectée.');
-        }
-        
-        // C'est un Event Listener, pas un Interceptor, donc on n'a pas besoin de "return" loadRequestData.
-        // On modifie l'objet en place, et le CAF continue le chargement.
-    }
-);
 
 
 
