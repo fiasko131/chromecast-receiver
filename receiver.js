@@ -1079,36 +1079,9 @@ playbackConfig.segmentHandler = (segmentUrl) => {
 // 5. Appliquer la configuration au PlayerManager (LA CORRECTION)
 playerManager.setPlaybackConfig(playbackConfig);*/
 
-// Doit être placé après la définition du playerManager et avant context.start()
 
-playerManager.setRequestInterceptor((request) => {
-    
-    // 1. Vérifiez si la requête utilise l'URL factice (manifeste ou segments)
-    if (typeof request.url === 'string' && request.url.startsWith('/localstream')) {
-        
-        const mediaInfo = playerManager.getMediaInformation();
-        
-        // S'assurer que les données nécessaires ont été stockées
-        const localHost = mediaInfo?.customData?.localHost;
 
-        if (localHost) {
-            // 2. Traduire l'URL factice vers l'URL HTTP locale réelle
-            let realUrl = 'http://' + localHost + request.url.replace('/localstream', '');
-            
-            console.log('[REQUEST INTERCEPTOR] Traduction de:', request.url, 'vers:', realUrl);
-            
-            // 3. Mettre à jour l'URL de la requête
-            request.url = realUrl; 
-            
-            // 4. (Optionnel mais recommandé) Ajouter des en-têtes CORS pour une tolérance maximale
-            request.headers = request.headers || {};
-            request.headers['Access-Control-Allow-Origin'] = '*';
-        }
-    }
-    
-    // Renvoyer la requête modifiée (ou non modifiée)
-    return request;
-});
+
 
 
 // ==================== UI ELEMENTS ====================
@@ -1391,6 +1364,58 @@ playerManager.addEventListener(
     stopVideoProgressTimer();
     showBottomUiTemporarily();
   }
+);
+
+// Remplacez votre tentative d'utiliser setRequestInterceptor par ce bloc
+
+playerManager.addEventListener(
+    cast.framework.events.EventType.PLAYER_LOADING,
+    (event) => {
+        // L'objet 'event.data' contient les données de la requête LOAD
+        const loadRequestData = event.data;
+        const mediaInfo = loadRequestData.media;
+
+        // On vérifie si nous avons des customData contenant notre hôte local
+        // Cet hôte a été stocké par l'intercepteur LOAD (Étape 1 précédente)
+        const localHost = mediaInfo?.customData?.localHost;
+
+        // VÉRIFICATION CRITIQUE : Est-ce notre URL factice ?
+        if (localHost && mediaInfo.contentId.startsWith('/localstream')) {
+            
+            console.log('[SHAKA CONFIG] Détection de flux local. Préparation à la traduction d’URL.');
+            
+            // --- DÉFINITION DE LA LOGIQUE DE TRADUCTION POUR SHAKA ---
+            const shakaConfig = {
+                // Utilisation du Resolver d'URI de Shaka pour intercepter toutes les requêtes
+                uri: {
+                    resolver: (uri) => {
+                        // Cette fonction se déclenche pour TOUS les chemins de médias (.m3u8 et .ts)
+                        if (uri.startsWith('/localstream')) {
+                            
+                            // Reconstruire l'URL HTTP réelle
+                            const realUrl = 'http://' + localHost + uri.replace('/localstream', '');
+                            console.log('[SHAKA RESOLVER] Traduction: ' + uri + ' -> ' + realUrl);
+                            
+                            // Retourner l'objet de résolution avec l'URL réelle
+                            return { uri: realUrl };
+                        }
+                        // Important : pour les autres URI (si Shaka gère autre chose), ne rien faire
+                        return null;
+                    }
+                }
+            };
+            // --- FIN LOGIQUE DE TRADUCTION ---
+
+            // Injecter cette configuration dans le customData du LOAD pour que Shaka la prenne en compte
+            loadRequestData.media.customData = loadRequestData.media.customData || {};
+            loadRequestData.media.customData.shakaConfig = shakaConfig;
+            
+            console.log('[SHAKA CONFIG] Configuration de résolution d\'URL injectée.');
+        }
+        
+        // C'est un Event Listener, pas un Interceptor, donc on n'a pas besoin de "return" loadRequestData.
+        // On modifie l'objet en place, et le CAF continue le chargement.
+    }
 );
 
 
