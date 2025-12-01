@@ -1057,7 +1057,7 @@ playerManager.setMessageInterceptor(
 playerManager.addEventListener(
     cast.framework.events.EventType.PLAYER_LOADING,
     (event) => {
-        
+        console.log("[PLAYER_LOADING TÉMOIN] L'événement est déclenché.");
         // ⭐ SÉCURISATION 1 : Vérifie que les données d'événement existent
         if (!event.data) {
             console.warn("[PLAYER_LOADING] Event data is null/undefined. Skipping config.");
@@ -1110,12 +1110,13 @@ playerManager.addEventListener(
     }
 );
 
-/*// Définition de l'intercepteur de segments (Doit être appelé avant context.start())
+// Définition de l'intercepteur de segments (Doit être appelé avant context.start())
 
 // 2. Utilisez la configuration EXISTANTE pour ne pas écraser d'autres réglages.
 let playbackConfig = playerManager.getPlaybackConfig() || new cast.framework.PlaybackConfig();
 
 playbackConfig.segmentHandler = (segmentUrl) => {
+  console.log('[SEGMENT TRANSLATION] Segment:', segmentUrl);
     if (typeof segmentUrl !== 'string' || segmentUrl === null) {
         return segmentUrl; // Retourne la valeur non-string sans la modifier
     }
@@ -1129,7 +1130,7 @@ playbackConfig.segmentHandler = (segmentUrl) => {
             // Reconstruire l'URL HTTP complète pour le segment
             let realUrl = 'http://' + localHost + segmentUrl.replace('/localstream', '');
             
-            // console.log('[SEGMENT TRANSLATION] Segment:', realUrl); // Décommenter pour debug
+            console.log('[SEGMENT TRANSLATION] Segment:', realUrl); // Décommenter pour debug
             return realUrl; 
         }
     }
@@ -1137,7 +1138,7 @@ playbackConfig.segmentHandler = (segmentUrl) => {
 };
 
 // 5. Appliquer la configuration au PlayerManager (LA CORRECTION)
-playerManager.setPlaybackConfig(playbackConfig);*/
+playerManager.setPlaybackConfig(playbackConfig);
 
 
 
