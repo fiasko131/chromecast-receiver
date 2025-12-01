@@ -1074,9 +1074,9 @@ playbackConfig.segmentHandler = (segmentUrl) => {
     return segmentUrl; 
 };
 
-// Appliquer la configuration au contexte
-context.setPlaybackConfig(playbackConfig);
-// context.start(); // Si start n'est pas déjà appelé
+// 5. Appliquer la configuration au PlayerManager (LA CORRECTION)
+playerManager.setPlaybackConfig(playbackConfig);
+
 
 
 
