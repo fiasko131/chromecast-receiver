@@ -1050,7 +1050,7 @@ playerManager.setMessageInterceptor(
   }
 );
 
-// Définition de l'intercepteur de segments (Doit être appelé avant context.start())
+/*// Définition de l'intercepteur de segments (Doit être appelé avant context.start())
 
 // 2. Utilisez la configuration EXISTANTE pour ne pas écraser d'autres réglages.
 let playbackConfig = playerManager.getPlaybackConfig() || new cast.framework.PlaybackConfig();
@@ -1077,9 +1077,38 @@ playbackConfig.segmentHandler = (segmentUrl) => {
 };
 
 // 5. Appliquer la configuration au PlayerManager (LA CORRECTION)
-playerManager.setPlaybackConfig(playbackConfig);
+playerManager.setPlaybackConfig(playbackConfig);*/
 
+// Doit être placé après la définition du playerManager et avant context.start()
 
+playerManager.setRequestInterceptor((request) => {
+    
+    // 1. Vérifiez si la requête utilise l'URL factice (manifeste ou segments)
+    if (typeof request.url === 'string' && request.url.startsWith('/localstream')) {
+        
+        const mediaInfo = playerManager.getMediaInformation();
+        
+        // S'assurer que les données nécessaires ont été stockées
+        const localHost = mediaInfo?.customData?.localHost;
+
+        if (localHost) {
+            // 2. Traduire l'URL factice vers l'URL HTTP locale réelle
+            let realUrl = 'http://' + localHost + request.url.replace('/localstream', '');
+            
+            console.log('[REQUEST INTERCEPTOR] Traduction de:', request.url, 'vers:', realUrl);
+            
+            // 3. Mettre à jour l'URL de la requête
+            request.url = realUrl; 
+            
+            // 4. (Optionnel mais recommandé) Ajouter des en-têtes CORS pour une tolérance maximale
+            request.headers = request.headers || {};
+            request.headers['Access-Control-Allow-Origin'] = '*';
+        }
+    }
+    
+    // Renvoyer la requête modifiée (ou non modifiée)
+    return request;
+});
 
 
 // ==================== UI ELEMENTS ====================
