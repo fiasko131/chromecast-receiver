@@ -559,7 +559,8 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         // Sinon → on sonde en HTML5
         try {
           console.log("⏳ Sonde durée via HTML5…");
-          durationSec = await probeDurationWithHTML5(url, signal);
+          if (!url.endsWith(".m3u8"))
+            durationSec = await probeDurationWithHTML5(url, signal);
           console.log("✅ Durée trouvée via HTML5:", durationSec, "sec");
         } catch (err) {
           if (err.name === "AbortError") {
@@ -575,7 +576,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       const mediaInfo = new cast.framework.messages.MediaInformation();
       mediaInfo.contentId = url;
       mediaInfo.contentType = contentType;
-      mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
+      mediaInfo.streamType = cast.framework.messages.StreamType.LIVE;
 
       if (durationSec > 0) {
         mediaInfo.streamDuration = durationSec;  // ⭐ CAF a enfin la durée correcte
