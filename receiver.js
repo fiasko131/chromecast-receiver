@@ -619,13 +619,16 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         mediaInfo.contentId = segUrl;
         mediaInfo.contentType = "video/mp4";
         mediaInfo.streamType = cast.framework.messages.StreamType.LIVE;
-        mediaInfo.streamDuration = segmentDuration; // très important
 
-        const req = new cast.framework.messages.QueueItem();
-        req.media = mediaInfo;
-        req.autoplay = true;
+        // ❌ INTERDIT en LIVE → do NOT set mediaInfo.streamDuration
+        // mediaInfo.streamDuration = segmentDuration;
 
-        items.push(req);
+        const queueItem = new cast.framework.messages.QueueItem();
+        queueItem.media = mediaInfo;
+        queueItem.autoplay = true;
+        queueItem.preloadTime = 5; // facultatif mais utile pour enchaîner proprement
+
+        items.push(queueItem);
     }
 
     const queueData = new cast.framework.messages.QueueLoadRequestData();
@@ -635,11 +638,12 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
 
     try {
         await playerManager.load(queueData);
-        console.log("🎉 Lecture CAF QUEUE OK");
+        console.log("🎉 CAF QUEUE chargée avec succès");
     } catch (e) {
-        console.error("❌ Erreur CAF Queue:", e);
+        console.error("❌ Erreur load CAF Queue:", e);
     }
-  }
+}
+
 
 
 
