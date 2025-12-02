@@ -145,12 +145,13 @@ let lastImageIndex = 0;
 // Détection par suffixe/url comme demandé : /v pour vidéo, /a pour audio
 function isVideoUrl(url) {
   if (!url) return false;
+  if (url.startsWith("{")) return true;
 
   try {
     const u = new URL(url);
 
     // Condition 1 : l'URL contient /v
-    const hasV = u.pathname.endsWith("/v") || u.pathname.includes("/v/") || !url.startsWith("http");
+    const hasV = u.pathname.endsWith("/v") || u.pathname.includes("/v/");
 
 
     return hasV ;
