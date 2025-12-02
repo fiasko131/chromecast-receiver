@@ -195,7 +195,8 @@ function preloadImage(url) {
 
 // préchargement vidéo minimal : crée un element <video> en mémoire et preload metadata
 function preloadVideo(url) {
-  if (!url) return;
+  
+  /*if (!url) return;
   if (imageCache[url]) return; // marqueur déjà
   try {
     const v = document.createElement('video');
@@ -211,7 +212,7 @@ function preloadVideo(url) {
     };
   } catch (e) {
     console.warn("Preload video non supporté :", e);
-  }
+  }*/
 }
 
 // -------------------- Affichage (image) --------------------
