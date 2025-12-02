@@ -150,12 +150,10 @@ function isVideoUrl(url) {
     const u = new URL(url);
 
     // Condition 1 : l'URL contient /v
-    const hasV = u.pathname.endsWith("/v") || u.pathname.endsWith(".m3u8") || u.pathname.includes("/v/");
+    const hasV = u.pathname.endsWith("/v") || u.pathname.includes("/v/") || !url.startsWith("http");
 
-    // Condition 2 : le port est 9020
-    const isPort9020 = u.port === "9020";
 
-    return hasV || isPort9020;
+    return hasV ;
   } catch (e) {
     // URL invalide → fallback ancienne méthode
     return url.includes("/v") || url.includes(":9020");
@@ -608,6 +606,41 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       }
     }
 
+  async function loadVideoViaCAFQueue(segmentList, segmentDuration, startIndex) {
+    console.log("🎬 [CAF QUEUE] Start index:", startIndex);
+
+    const items = [];
+
+    for (let i = 0; i < segmentList.length; i++) {
+        const segUrl = segmentList[i];
+
+        const mediaInfo = new cast.framework.messages.MediaInformation();
+        mediaInfo.contentId = segUrl;
+        mediaInfo.contentType = "video/mp4";
+        mediaInfo.streamType = cast.framework.messages.StreamType.LIVE;
+        mediaInfo.streamDuration = segmentDuration; // très important
+
+        const req = new cast.framework.messages.QueueItem();
+        req.media = mediaInfo;
+        req.autoplay = true;
+
+        items.push(req);
+    }
+
+    const queueData = new cast.framework.messages.QueueLoadRequestData();
+    queueData.items = items;
+    queueData.startIndex = startIndex;
+    queueData.repeatMode = cast.framework.messages.RepeatMode.OFF;
+
+    try {
+        await playerManager.load(queueData);
+        console.log("🎉 Lecture CAF QUEUE OK");
+    } catch (e) {
+        console.error("❌ Erreur CAF Queue:", e);
+    }
+  }
+
+
 
     // ============================================================
     // 🔧 AJOUT VIDEO CAF : wrapper pour remplacer votre castLoadVideo
@@ -710,36 +743,53 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
                   displayFirstImage(first);
 
               } else if (isVideoUrl(first)) {
-                  if (firstUrl.startsWith('http://') && firstUrl.includes('192.168.')) {
-        
-                      // Trouver la partie Hôte:Port (ex: 192.168.x.x:9010)
-                      // L'URL est http://hôte:port/chemin...
-                      const protocolEndIndex = firstUrl.indexOf('://') + 3;
-                      const pathStartIndex = firstUrl.indexOf('/', protocolEndIndex);
-                      
-                      // Extrait '192.168.x.x:9010'
-                      phoneIpAndPort = firstUrl.substring(protocolEndIndex, pathStartIndex); 
-                      console.log("[RECEIVER] Local Host Extrait:", phoneIpAndPort);
-                  }
+                  
                   console.log("[RECEIVER] Première vidéo → passage en mode CAF");
                   console.log("[RECEIVER] durationMs "+data.durationms);
-                  // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
-                  const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
-                  const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
-                  console.log("[RECEIVER] durationMs "+durationMs);
-                  //castLoadVideoCAF(first,"video",mimeType,0);
-                  if (currentAbortController) {
-                    currentAbortController.abort();
+                  // 👇 Detect segment JSON instead of regular URL
+                  let isSegmentJson = false;
+                  let segmentData = null;
+
+                  if (typeof first === "string" && first.trim().startsWith("{")) {
+                      try {
+                          const parsed = JSON.parse(first);
+
+                          if (parsed.type === "init_playlist" && Array.isArray(parsed.segments)) {
+                              isSegmentJson = true;
+                              segmentData = parsed;
+                              console.log("[RECEIVER] JSON init_playlist détecté:", parsed);
+                          }
+                      } catch(e) {
+                          console.warn("[RECEIVER] String ressemble à du JSON mais invalide :", e);
+                      }
                   }
-                  currentAbortController = new AbortController();
+                  if (isSegmentJson) {
+                      console.log("[RECEIVER] Lecture via segmentation CAF Queue");
 
-                  // Lancer la nouvelle vidéo
-                  loadVideoViaCAF(first, data.title, mimeType, durationMs, currentAbortController.signal);
+                      loadVideoViaCAFQueue(
+                          segmentData.segments,
+                          segmentData.segmentDuration,
+                          segmentData.playFromSegmentIndex
+                      );
 
+                  } else if (first.startsWith("http")) {
+                      // URL classique → lecture CAF standard
+                      // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
+                      const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
+                      const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
+                      console.log("[RECEIVER] durationMs "+durationMs);
+                      //castLoadVideoCAF(first,"video",mimeType,0);
+                      if (currentAbortController) {
+                        currentAbortController.abort();
+                      }
+                      currentAbortController = new AbortController();
+                      loadVideoViaCAF(first, data.title, mimeType, durationMs, currentAbortController.signal);
+
+                  } else {
+                      console.error("[RECEIVER] Valeur inattendue dans la liste: ", first);
+                  }
                   pendingVideoUrl = first;
                   firstImageShown = true;
-
-                
 
               } else if (isAudioUrl(first)) {
                   showAudioAtIndex(currentImageIndex);
@@ -923,40 +973,6 @@ function displayFirstImage(url) {
 playerManager.setMessageInterceptor(
   cast.framework.messages.MessageType.LOAD,
   (loadRequest) => {
-    const mediaInfo = loadRequest.media;
-    const contentUrl = mediaInfo?.contentId;
-    // ============================================================
-    // 1.5 TRADUCTION URL HLS (Ajout pour le streaming local) 💡
-    // ============================================================
-    // Vérifiez si l'URL est la forme HTTP locale problématique et que l'IP est connue.
-        if (contentUrl && contentUrl.startsWith("http://") && contentUrl.endsWith(".m3u8") && contentUrl.includes("192.168.") && phoneIpAndPort) {
-            
-            console.log("[RECEIVER] Interception URL locale HLS.");
-            
-            // 1. Trouver l'index du début du chemin (/storage/...)
-            // Cherche la troisième barre oblique (après http://192.168.x.x:9010)
-            const pathStartIndex = contentUrl.indexOf('/', contentUrl.indexOf('://') + 3);
-            
-            if (pathStartIndex > 0) {
-                const mediaPath = contentUrl.substring(pathStartIndex); // /storage/emulated/...
-                
-                // 2. Créer l'URL factice
-                const fakeUrl = '/localstream' + mediaPath;
-                
-                // 3. Mettre à jour contentId avec l'URL factice (HTTPS-compatible)
-                mediaInfo.contentId = fakeUrl;
-
-                // 4. Injecter l'adresse réelle dans customData pour l'intercepteur de segments
-                if (!mediaInfo.customData) mediaInfo.customData = {};
-                mediaInfo.customData.localHost = phoneIpAndPort;
-
-                console.log(`[HLS TRADUCTION] Traduit ${contentUrl} vers ${fakeUrl}`);
-            } else {
-                console.error("[HLS TRADUCTION] Impossible d'analyser le chemin de l'URL locale.");
-            }
-        }
-        
-
     // ============================================================
     // 1️⃣ GESTION IMAGE : empêcher CAF de prendre le contrôle
     // ============================================================
@@ -1049,100 +1065,6 @@ playerManager.setMessageInterceptor(
     return loadRequest;
   }
 );
-
-// =========================================================
-// 3. ÉVÉNEMENT PLAYER_LOADING (Le Pont de Traduction)
-//    Injecte la configuration Shaka Player (URI Resolver)
-// =========================================================
-/*playerManager.addEventListener(
-    cast.framework.events.EventType.PLAYER_LOADING,
-    (event) => {
-        console.log("[PLAYER_LOADING TÉMOIN] L'événement est déclenché.");
-        // ⭐ SÉCURISATION 1 : Vérifie que les données d'événement existent
-        if (!event.data) {
-            console.warn("[PLAYER_LOADING] Event data is null/undefined. Skipping config.");
-            return;
-        }
-        
-        const loadRequestData = event.data;
-        const mediaInfo = loadRequestData.media;
-        
-        // ⭐ SÉCURISATION 2 : Vérifie que l'objet média existe
-        if (!mediaInfo || !mediaInfo.contentId) {
-            console.warn("[PLAYER_LOADING] Media info missing. Skipping config.");
-            return;
-        }
-
-        const localHost = mediaInfo.customData?.localHost;
-
-        // VÉRIFICATION CRITIQUE : Est-ce notre URL factice ET avons-nous l'hôte ?
-        if (localHost && mediaInfo.contentId.startsWith('/localstream')) {
-            
-            console.log('[SHAKA CONFIG] Détection de flux local. Injection de la traduction d’URL.');
-            
-            const shakaConfig = {
-                uri: {
-                    // Cette fonction se déclenche pour TOUTES les requêtes (manifeste et segments)
-                    resolver: (uri) => {
-                        
-                        // ⭐ SÉCURISATION 3 : Vérifie que l'URI est une chaîne et contient le préfixe factice
-                        if (typeof uri === 'string' && uri.startsWith('/localstream')) {
-                            
-                            // On peut utiliser le 'localHost' capturé dans la portée supérieure (closure)
-                            const realUrl = 'http://' + localHost + uri.replace('/localstream', '');
-                            console.log('[SHAKA RESOLVER] Traduction: ' + uri + ' -> ' + realUrl);
-                            
-                            return { uri: realUrl };
-                        }
-                        return null; // Laisse Shaka gérer l'URI par défaut
-                    }
-                }
-            };
-            
-            // Injecter la configuration Shaka Player dans le customData du LOAD
-            loadRequestData.media.customData = loadRequestData.media.customData || {};
-            loadRequestData.media.customData.shakaConfig = shakaConfig;
-            
-            console.log('[SHAKA CONFIG] Configuration de résolution d\'URL injectée.');
-        }
-        
-        // C'est un Event Listener, on modifie l'objet en place.
-    }
-);*/
-
-// Définition de l'intercepteur de segments (Doit être appelé avant context.start())
-
-// 2. Utilisez la configuration EXISTANTE pour ne pas écraser d'autres réglages.
-let playbackConfig = playerManager.getPlaybackConfig() || new cast.framework.PlaybackConfig();
-
-playbackConfig.segmentHandler = (segmentUrl) => {
-  console.log('[SEGMENT TRANSLATION] Segment:', segmentUrl);
-    if (typeof segmentUrl !== 'string' || segmentUrl === null) {
-        return segmentUrl; // Retourne la valeur non-string sans la modifier
-    }
-    // Le lecteur demande un segment basé sur l'URL factice /localstream/...
-    if (segmentUrl.startsWith('/localstream')) { 
-        
-        const mediaInfo = context.getPlayerManager().getMediaInformation();
-        const localHost = mediaInfo?.customData?.localHost;
-
-        if (localHost) {
-            // Reconstruire l'URL HTTP complète pour le segment
-            let realUrl = 'http://' + localHost + segmentUrl.replace('/localstream', '');
-            
-            console.log('[SEGMENT TRANSLATION] Segment:', realUrl); // Décommenter pour debug
-            return realUrl; 
-        }
-    }
-    return segmentUrl; 
-};
-
-// 5. Appliquer la configuration au PlayerManager (LA CORRECTION)
-playerManager.setPlaybackConfig(playbackConfig);
-
-
-
-
 
 
 // ==================== UI ELEMENTS ====================
