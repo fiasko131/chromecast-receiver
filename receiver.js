@@ -607,42 +607,61 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       }
     }
 
-  async function loadVideoViaCAFQueue(segmentList, segmentDuration, startIndex) {
-    console.log("🎬 [CAF QUEUE] Start index:", startIndex);
+    /**
+ * Charge une file de segments fMP4 dans CAF de manière conforme.
+ *
+ * @param {string[]} segmentList    - tableau d'URLs (segment_00000.mp4, ...)
+ * @param {number} startIndex       - index du segment de départ dans segmentList
+ */
+async function loadVideoViaCAFQueue(segmentList, startIndex) {
+  console.log("🎬 [CAF QUEUE] Start index:", startIndex);
 
-    const items = [];
+  if (!Array.isArray(segmentList) || segmentList.length === 0) {
+    console.warn("[CAF QUEUE] Liste de segments vide");
+    return;
+  }
+  if (typeof startIndex !== "number") startIndex = 0;
+  if (startIndex < 0) startIndex = 0;
+  if (startIndex >= segmentList.length) startIndex = 0;
 
-    for (let i = 0; i < segmentList.length; i++) {
-        const segUrl = segmentList[i];
+  // Construire les QueueItem
+  const items = segmentList.map((segUrl) => {
+    const mediaInfo = new cast.framework.messages.MediaInformation();
+    mediaInfo.contentId = segUrl;
+    mediaInfo.contentType = "video/mp4";
+    mediaInfo.streamType = cast.framework.messages.StreamType.LIVE;
+    // IMPORTANT : ne PAS définir mediaInfo.streamDuration en LIVE
 
-        const mediaInfo = new cast.framework.messages.MediaInformation();
-        mediaInfo.contentId = segUrl;
-        mediaInfo.contentType = "video/mp4";
-        mediaInfo.streamType = cast.framework.messages.StreamType.LIVE;
+    const queueItem = new cast.framework.messages.QueueItem();
+    queueItem.media = mediaInfo;
+    queueItem.autoplay = true;
+    // Préchargement en secondes pour minimiser gap
+    queueItem.preloadTime = 5;
 
-        // ❌ INTERDIT en LIVE → do NOT set mediaInfo.streamDuration
-        // mediaInfo.streamDuration = segmentDuration;
+    return queueItem;
+  });
 
-        const queueItem = new cast.framework.messages.QueueItem();
-        queueItem.media = mediaInfo;
-        queueItem.autoplay = true;
-        queueItem.preloadTime = 5; // facultatif mais utile pour enchaîner proprement
+  // Construire la requête de queue (obligatoire)
+  const queueLoadRequest = new cast.framework.messages.QueueLoadRequestData();
+  queueLoadRequest.items = items;
+  queueLoadRequest.startIndex = startIndex;
+  queueLoadRequest.repeatMode = cast.framework.messages.RepeatMode.OFF;
+  // Optional: donner un nom identifiable
+  queueLoadRequest.queueData = new cast.framework.messages.QueueData();
+  queueLoadRequest.queueData.name = "Segmented MP4 Queue";
 
-        items.push(queueItem);
-    }
+  // Effectuer le chargement via le QueueManager (et non playerManager.load)
+  try {
+    const ctx = cast.framework.CastReceiverContext.getInstance();
+    const queueManager = ctx.getPlayerManager().getQueueManager();
 
-    const queueData = new cast.framework.messages.QueueLoadRequestData();
-    queueData.items = items;
-    queueData.startIndex = startIndex;
-    queueData.repeatMode = cast.framework.messages.RepeatMode.OFF;
-
-    try {
-        await playerManager.load(queueData);
-        console.log("🎉 CAF QUEUE chargée avec succès");
-    } catch (e) {
-        console.error("❌ Erreur load CAF Queue:", e);
-    }
+    await queueManager.load(queueLoadRequest);
+    console.log("🎉 Queue CAF chargée OK (startIndex=" + startIndex + ")");
+  } catch (err) {
+    console.error("❌ Erreur load CAF Queue:", err);
+  }
 }
+
 
 
 
