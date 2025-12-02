@@ -629,8 +629,8 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
     const mediaInfo = new cast.framework.messages.MediaInformation();
     mediaInfo.contentId = segUrl;
     mediaInfo.contentType = "video/mp4";
-    mediaInfo.streamType = cast.framework.messages.StreamType.LIVE;
-    // IMPORTANT : ne PAS définir mediaInfo.streamDuration en LIVE
+    mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
+    mediaInfo.streamDuration = 10; // <-- durée connue
 
     const queueItem = new cast.framework.messages.QueueItem();
     queueItem.media = mediaInfo;
