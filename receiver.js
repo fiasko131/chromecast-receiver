@@ -608,10 +608,9 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     }
 
     /**
- * Charge une file de segments fMP4 dans CAF de manière conforme.
- *
- * @param {string[]} segmentList    - tableau d'URLs (segment_00000.mp4, ...)
- * @param {number} startIndex       - index du segment de départ dans segmentList
+ * Charge une queue fMP4 dans CAF (initial load) de façon conforme.
+ * @param {string[]} segmentList
+ * @param {number} startIndex
  */
 async function loadVideoViaCAFQueue(segmentList, startIndex) {
   console.log("🎬 [CAF QUEUE] Start index:", startIndex);
@@ -620,11 +619,11 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
     console.warn("[CAF QUEUE] Liste de segments vide");
     return;
   }
-  if (typeof startIndex !== "number") startIndex = 0;
-  if (startIndex < 0) startIndex = 0;
-  if (startIndex >= segmentList.length) startIndex = 0;
+  if (typeof startIndex !== "number" || startIndex < 0 || startIndex >= segmentList.length) {
+    startIndex = 0;
+  }
 
-  // Construire les QueueItem
+  // 1) Construire les QueueItem
   const items = segmentList.map((segUrl) => {
     const mediaInfo = new cast.framework.messages.MediaInformation();
     mediaInfo.contentId = segUrl;
@@ -635,32 +634,35 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
     const queueItem = new cast.framework.messages.QueueItem();
     queueItem.media = mediaInfo;
     queueItem.autoplay = true;
-    // Préchargement en secondes pour minimiser gap
-    queueItem.preloadTime = 5;
+    queueItem.preloadTime = 5; // aide au gapless
 
     return queueItem;
   });
 
-  // Construire la requête de queue (obligatoire)
-  const queueLoadRequest = new cast.framework.messages.QueueLoadRequestData();
-  queueLoadRequest.items = items;
-  queueLoadRequest.startIndex = startIndex;
-  queueLoadRequest.repeatMode = cast.framework.messages.RepeatMode.OFF;
-  // Optional: donner un nom identifiable
-  queueLoadRequest.queueData = new cast.framework.messages.QueueData();
-  queueLoadRequest.queueData.name = "Segmented MP4 Queue";
+  // 2) Construire QueueLoadRequestData (les items)
+  const queueLoadReq = new cast.framework.messages.QueueLoadRequestData();
+  queueLoadReq.items = items;
+  queueLoadReq.startIndex = startIndex;
+  queueLoadReq.repeatMode = cast.framework.messages.RepeatMode.OFF;
+  // optionnel : queueLoadReq.customData = {...}
 
-  // Effectuer le chargement via le QueueManager (et non playerManager.load)
+  // 3) Encapsuler dans un LoadRequestData (obligatoire pour playerManager.load)
+  const loadReq = new cast.framework.messages.LoadRequestData();
+  // Tu peux aussi préciser loadReq.autoplay = true / loadReq.currentTime ...
+  loadReq.queueData = queueLoadReq;
+
+  // 4) Appeler playerManager.load(loadReq)
   try {
     const ctx = cast.framework.CastReceiverContext.getInstance();
-    const queueManager = ctx.getPlayerManager().getQueueManager();
+    const playerManager = ctx.getPlayerManager();
 
-    await queueManager.load(queueLoadRequest);
-    console.log("🎉 Queue CAF chargée OK (startIndex=" + startIndex + ")");
+    await playerManager.load(loadReq);
+    console.log("🎉 LoadRequest (queue) envoyé OK (startIndex=" + startIndex + ")");
   } catch (err) {
-    console.error("❌ Erreur load CAF Queue:", err);
+    console.error("❌ Erreur load CAF (playerManager.load):", err);
   }
 }
+
 
 
 
