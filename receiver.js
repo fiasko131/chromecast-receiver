@@ -726,13 +726,13 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         break;
       case "TRANSCODE_MP4_FINISHED":
           const durationSec = data.durationSec;
-          console.log("duration DEFINITIVE !!!!!! ", data.durationText);
+          console.log("duration DEFINITIVE !!!!!! ", data.durationSec);
 
           // Récupérer le MediaInfo actuel
         const mediaInfo = playerManager.getMediaInformation();
         
         // 1. Mettre à jour la durée totale
-        mediaInfo.streamDuration = finalDuration;
+        mediaInfo.streamDuration = durationSec;
 
         // 2. Changer le type de flux de LIVE à BUFFERED (Crucial!)
         // Cela permet au lecteur de savoir que la durée est FIXE et que l'on peut Seek partout.
