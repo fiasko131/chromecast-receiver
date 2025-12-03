@@ -1467,6 +1467,13 @@ document.addEventListener("click", () => {
 
 // Définir le timeout à 1 heure (3600 secondes)
 context.setInactivityTimeout(3600);
+// 1. Définir le niveau de log
+const options = new cast.framework.CastReceiverOptions();
+
+// Choisissez l'un des niveaux suivants :
+
+// Option A (Recommandée) : Ne loguer que les erreurs critiques.
+options.loggerLevel = cast.framework.LoggerLevel.ERROR;
 // ==================== START RECEIVER ========================
 context.start();
 
