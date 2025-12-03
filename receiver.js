@@ -1341,6 +1341,8 @@ function startVideoProgressTimer() {
 
     const current = playerManager.getCurrentTimeSec();
     const duration = playerManager.getDurationSec();
+    console.log("[RECEIVER] duration=", duration);
+    console.log("[RECEIVER] current=", current);
 
     if (!duration || duration <= 0) return;
     if (isNaN(current)) return;
