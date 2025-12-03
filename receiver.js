@@ -724,6 +724,23 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           el.classList.add("show");
        
         break;
+      case "TRANSCODE_MP4_FINISHED":
+          const durationSec = data.durationSec;
+          console.log("duration DEFINITIVE !!!!!! ", data.durationText);
+
+          // Récupérer le MediaInfo actuel
+        const mediaInfo = playerManager.getMediaInformation();
+        
+        // 1. Mettre à jour la durée totale
+        mediaInfo.streamDuration = finalDuration;
+
+        // 2. Changer le type de flux de LIVE à BUFFERED (Crucial!)
+        // Cela permet au lecteur de savoir que la durée est FIXE et que l'on peut Seek partout.
+        mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
+
+        // 3. Informer le lecteur CAF de la modification
+        playerManager.setMediaInformation(mediaInfo, true);
+          break;
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
         if (Array.isArray(data.urls)) {
