@@ -728,7 +728,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         break;
       case "TRANSCODE_MP4_FINISHED":
           const durationSec = data.durationSec;
-          console.log("[RECEIVER] ","finalDuration" +data.durationSec);
+          console.log("[RECEIVER] finalDuration trancoded",data.durationSec);
 
           // Récupérer le MediaInfo actuel
         const mediaInfo = playerManager.getMediaInformation();
@@ -740,6 +740,8 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         // Cela permet au lecteur de savoir que la durée est FIXE et que l'on peut Seek partout.
         mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
         transcoding = false;
+        console.log("[RECEIVER] streamDuration",mediaInfo.streamDuration);
+        console.log("[RECEIVER] streamType",mediaInfo.streamType);
        
 
         // 3. Informer le lecteur CAF de la modification
@@ -1332,7 +1334,7 @@ playerManager.addEventListener(
 
 function startVideoProgressTimer() {
   stopVideoProgressTimer(); // sécurité
-  if (transcoding) return;
+  //if (transcoding) return;
   videoProgressTimer = setInterval(() => {
     
     if (!playerManager) return;
@@ -1477,7 +1479,7 @@ const options = new cast.framework.CastReceiverOptions();
 // Choisissez l'un des niveaux suivants :
 
 // Option A (Recommandée) : Ne loguer que les erreurs critiques.
-options.loggerLevel = cast.framework.LoggerLevel.ERROR;
+options.loggerLevel = cast.framework.LoggerLevel.BONE;
 // ==================== START RECEIVER ========================
 context.start();
 
