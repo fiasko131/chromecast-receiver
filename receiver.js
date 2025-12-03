@@ -561,7 +561,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         try {
           console.log("⏳ Sonde durée via HTML5…");
           if (!url.endsWith(".m3u8"))
-            durationSec = await probeDurationWithHTML5(url, signal);
+            //durationSec = await probeDurationWithHTML5(url, signal);
           console.log("✅ Durée trouvée via HTML5:", durationSec, "sec");
         } catch (err) {
           if (err.name === "AbortError") {
@@ -794,11 +794,11 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                   if (isSegmentJson) {
                       console.log("[RECEIVER] Lecture via segmentation CAF Queue");
 
-                      loadVideoViaCAFQueue(
+                      /*loadVideoViaCAFQueue(
                           segmentData.segments,
                           segmentData.segmentDuration,
                           segmentData.playFromSegmentIndex
-                      );
+                      );*/
 
                   } else if (first.startsWith("http")) {
                       // URL classique → lecture CAF standard
