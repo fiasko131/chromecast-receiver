@@ -822,6 +822,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
 
                   } else if (first.startsWith("http")) {
                     if (first.includes("progressive.mp4")) transcoding = true;
+                      console.log("[RECEIVER] transcoding "+transcoding);
                       // URL classique → lecture CAF standard
                       // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
                       const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
@@ -1327,9 +1328,9 @@ playerManager.addEventListener(
 
 function startVideoProgressTimer() {
   stopVideoProgressTimer(); // sécurité
-
+  if (transcoding) return;
   videoProgressTimer = setInterval(() => {
-    if (transcoding) return;
+    
     if (!playerManager) return;
 
     const current = playerManager.getCurrentTimeSec();
@@ -1351,7 +1352,7 @@ function startVideoProgressTimer() {
       duration: Math.round(duration * 1000)
     });
 
-  }, 50); // 🔥 50 ms = super fluide
+  }, 200); // 🔥 50 ms = super fluide
 }
 function stopVideoProgressTimer() {
   if (videoProgressTimer) {
