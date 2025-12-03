@@ -744,18 +744,19 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         
         // 1. Sauvegarder la position actuelle avant la coupure
         const currentTime = playerManager.getCurrentTimeSec();
-        const finalDuration = customEvent.data.finalDuration; // Votre 8692.65
+        const finalDuration = durationSec; // Votre 8692.65
 
         // 2. Construire un NOUVEAU LOAD REQUEST
 
-        newMediaInfo.contentId = playerManager.getMediaInformation().contentId;
-        newMediaInfo.contentType = playerManager.getMediaInformation().contentType;
+        newMediaInfo.contentId = data.finalUrl;
+        //newMediaInfo.contentType = playerManager.getMediaInformation().contentType;
 
         // ⭐ Les mises à jour critiques :
         newMediaInfo.streamDuration = durationSec;
         newMediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
-        console.log("[RECEIVER] streamDuration",mediaInfo.streamDuration);
-        console.log("[RECEIVER] streamType",mediaInfo.streamType);
+        console.log("[RECEIVER] final url",newMediaInfo.contentId);
+        console.log("[RECEIVER] streamDuration",newMediaInfo.streamDuration);
+        console.log("[RECEIVER] streamType",newMediaInfo.streamType);
 
         // 3. Préparer la requête de chargement
         const newLoadRequest = new cast.framework.messages.LoadRequestData();
