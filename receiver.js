@@ -492,10 +492,10 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
   try {
     imagesSenderId = event.senderId;
     const data = event.data;
-    console.log("Message IMAGE reçu:", data);
+    //console.log("Message IMAGE reçu:", data);
 
     if (!data || !data.type) return;
-    console.log("data.type:", data.type);
+    console.log("[RECEIVER]","data.type" +data.type);
   
     // ============================================================
     // 🔧 AJOUT VIDEO CAF : fonction d’aide
@@ -726,7 +726,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         break;
       case "TRANSCODE_MP4_FINISHED":
           const durationSec = data.durationSec;
-          console.log("duration DEFINITIVE !!!!!! ", data.durationSec);
+          console.log("[RECEIVER] ","finalDuration" +data.durationSec);
 
           // Récupérer le MediaInfo actuel
         const mediaInfo = playerManager.getMediaInformation();
