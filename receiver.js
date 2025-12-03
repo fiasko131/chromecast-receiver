@@ -578,7 +578,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       const mediaInfo = new cast.framework.messages.MediaInformation();
       mediaInfo.contentId = url;
       mediaInfo.contentType = contentType;
-      mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
+      mediaInfo.streamType = cast.framework.messages.StreamType.LIVE;
 
       if (durationSec > 0) {
         mediaInfo.streamDuration = durationSec;  // ⭐ CAF a enfin la durée correcte
