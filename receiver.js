@@ -740,11 +740,13 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         // Cela permet au lecteur de savoir que la durée est FIXE et que l'on peut Seek partout.
         mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
         transcoding = false;
-        showBottomUiTemporarily();
-        startVideoProgressTimer();
+       
 
         // 3. Informer le lecteur CAF de la modification
         playerManager.setMediaInformation(mediaInfo, true);
+        playerManager.sendPlayerStateChange(true);
+        showBottomUiTemporarily();
+        startVideoProgressTimer();
           break;
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
