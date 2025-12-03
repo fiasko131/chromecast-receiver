@@ -28,6 +28,7 @@ let audioTimer = null;
 let audioIsPlaying = false;
 let videoProgressTimer = null;
 let seekingInProgress = false;
+let transcoding = false;
 
 
 // ==================== IMAGE NAMESPACE & STATE ====================
@@ -560,8 +561,8 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
         // Sinon → on sonde en HTML5
         try {
           console.log("⏳ Sonde durée via HTML5…");
-          if (!url.endsWith(".m3u8"))
-            //durationSec = await probeDurationWithHTML5(url, signal);
+          if (!transcoding)
+            durationSec = await probeDurationWithHTML5(url, signal);
           console.log("✅ Durée trouvée via HTML5:", durationSec, "sec");
         } catch (err) {
           if (err.name === "AbortError") {
@@ -572,13 +573,14 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
           durationSec = 0;
         }
       }
-      durationSec = 0;
-
+      
       // Construire MediaInfo pour CAF
       const mediaInfo = new cast.framework.messages.MediaInformation();
       mediaInfo.contentId = url;
       mediaInfo.contentType = contentType;
-      mediaInfo.streamType = cast.framework.messages.StreamType.LIVE;
+      if (transcoding)
+        mediaInfo.streamType = cast.framework.messages.StreamType.LIVE;
+      else mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
 
       if (durationSec > 0) {
         mediaInfo.streamDuration = durationSec;  // ⭐ CAF a enfin la durée correcte
@@ -737,6 +739,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         // 2. Changer le type de flux de LIVE à BUFFERED (Crucial!)
         // Cela permet au lecteur de savoir que la durée est FIXE et que l'on peut Seek partout.
         mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
+        transcoding = false;
 
         // 3. Informer le lecteur CAF de la modification
         playerManager.setMediaInformation(mediaInfo, true);
@@ -818,6 +821,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                       );*/
 
                   } else if (first.startsWith("http")) {
+                    if (first.includes("progressive.mp4")) transcoding = true;
                       // URL classique → lecture CAF standard
                       // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
                       const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
@@ -1325,6 +1329,7 @@ function startVideoProgressTimer() {
   stopVideoProgressTimer(); // sécurité
 
   videoProgressTimer = setInterval(() => {
+    if (transcoding) return;
     if (!playerManager) return;
 
     const current = playerManager.getCurrentTimeSec();
