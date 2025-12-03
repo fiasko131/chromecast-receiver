@@ -759,21 +759,21 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         console.log("[RECEIVER] streamType",newMediaInfo.streamType);
 
         // 3. Préparer la requête de chargement
-        const newLoadRequest = new cast.framework.messages.LoadRequestData();
-        newLoadRequest.media = newMediaInfo;
+        //const newLoadRequest = new cast.framework.messages.LoadRequestData();
+        //newLoadRequest.media = newMediaInfo;
 
         // ⭐ Demander de démarrer la lecture à l'instant exact de l'arrêt
-        newLoadRequest.currentTime = currentTime; 
+        //newLoadRequest.currentTime = currentTime; 
 
         // 4. Exécuter le rechargement (C'est un appel de 'seek' sophistiqué)
         // Ceci est la seule façon de forcer le lecteur à reconstruire son état interne 
         // et à adopter la nouvelle duration.
-        playerManager.load(newLoadRequest);
+        //playerManager.load(newLoadRequest);
        
 
         // 3. Informer le lecteur CAF de la modification
-        //playerManager.setMediaInformation(mediaInfo, true);
-        //playerManager.sendPlayerStateChange(true);
+        playerManager.setMediaInformation(newMediaInfo, true);
+        playerManager.sendPlayerStateChange(true);
         showBottomUi();
         startVideoProgressTimer();
           break;
