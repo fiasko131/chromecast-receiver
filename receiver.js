@@ -1075,7 +1075,7 @@ playerManager.setMessageInterceptor(
             
             // 3. Envoyer un message personnalisé au Sender Android
             // Le Sender doit recevoir ce message et savoir qu'il doit redémarrer FFmpeg
-            context.sendCustomMessage(IMAGE_NAMESPACE, null, {
+            context.sendCustomMessage(IMAGE_NAMESPACE, imagesSenderId, {
                 type: 'SEEK_REQUESTED',
                 seekTime: seekTime
             });
