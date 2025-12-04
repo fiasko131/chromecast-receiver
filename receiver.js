@@ -1484,7 +1484,7 @@ document.addEventListener("click", () => {
 // Définir le timeout à 1 heure (3600 secondes)
 context.setInactivityTimeout(3600);
 // 1. Définir le niveau de log
-/ Debug logger CAF v3
+// Debug logger CAF v3
 const castDebugLogger = cast.debug.CastDebugLogger.getInstance();
 
 // Active l'affichage des logs sur la TV
