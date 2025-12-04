@@ -29,6 +29,7 @@ let audioIsPlaying = false;
 let videoProgressTimer = null;
 let seekingInProgress = false;
 let transcoding = false;
+let seekBarDuration = 0;
 
 
 // ==================== IMAGE NAMESPACE & STATE ====================
@@ -837,6 +838,8 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                   } else if (first.startsWith("http")) {
                     if (first.includes("progressive.mp4")) transcoding = true;
                       console.log("[RECEIVER] transcoding "+transcoding);
+                      seekBarDuration = data.seekBarDuration/1000;
+                      console.log("[RECEIVER] seekBarDuration "+seekBarDuration);
                       // URL classique → lecture CAF standard
                       // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
                       const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
@@ -1348,7 +1351,10 @@ function startVideoProgressTimer() {
     if (!playerManager) return;
 
     const current = playerManager.getCurrentTimeSec();
-    const duration = playerManager.getDurationSec();
+    let duration = 0;
+    if (!transcoding)
+      duration = playerManager.getDurationSec();
+    else duration = seekBarDuration;
     console.log("[RECEIVER] duration=", duration);
     console.log("[RECEIVER] current=", current);
 
