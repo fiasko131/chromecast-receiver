@@ -1486,40 +1486,38 @@ context.setInactivityTimeout(3600);
 
 
 
-context.addEventListener(
-  cast.framework.CastReceiverContextEventType.READY,
-  () => {
-    const castDebugLogger = cast.debug.CastDebugLogger.getInstance();
-    // Active l'affichage des logs sur la TV
-    castDebugLogger.setEnabled(true);
 
-    // Définition de ton tag
-    const TAG = '[RECEIVER]';
-
-    // Configure le niveau de logs :
-    // * = toutes les sources de logs (CAF inclus)
-    // On limite CAF : uniquement les erreurs
-    castDebugLogger.loggerLevelByTags = {
-      '*': cast.debug.LoggerLevel.ERROR,
-      [TAG]: cast.debug.LoggerLevel.INFO, // tes logs receiver complets
-    };
-
-    // Redirection console.log → Logger côté TV
-    console.log = (...args) => {
-      castDebugLogger.info(TAG, args.map(a => String(a)).join(' '));
-    };
-
-    // Redirection console.warn → Logger côté TV
-    console.warn = (...args) => {
-      castDebugLogger.warn(TAG, args.map(a => String(a)).join(' '));
-    };
-  }
-);
 
 
 
 
 // ==================== START RECEIVER ========================
 context.start();
+// Maintenant le debug logger est disponible
+if (cast.debug && cast.debug.CastDebugLogger) {
+    const castDebugLogger = cast.debug.CastDebugLogger.getInstance();
+
+    // Active l'affichage des logs sur la TV
+    castDebugLogger.setEnabled(true);
+
+    const TAG = '[RECEIVER]';
+
+    // Limiter CAF aux erreurs, laisser vos logs visibles
+    castDebugLogger.loggerLevelByTags = {
+        '*': cast.framework.LoggerLevel.ERROR,
+        [TAG]: cast.framework.LoggerLevel.INFO
+    };
+
+    // Redirection console.log / console.warn
+    console.log = (...args) => castDebugLogger.info(TAG, args.join(' '));
+    console.warn = (...args) => castDebugLogger.warn(TAG, args.join(' '));
+
+    // Capter les erreurs JS non catchées
+    window.onerror = (msg, src, line, col, err) => {
+        castDebugLogger.error(TAG, `[JS ERROR] ${msg} @ ${src}:${line}:${col}`);
+    };
+} else {
+    console.warn('cast.debug.CastDebugLogger non disponible (vérifier CAF v3)');
+}
 
 
