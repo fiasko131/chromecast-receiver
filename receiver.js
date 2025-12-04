@@ -711,7 +711,12 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           if (playerManager && typeof data.position === "number") {
             // ⚡ seek en secondes
             console.log("seek to "+data.position/1000);
-            playerManager.seek(data.position/1000);
+            if (transcoding){
+              handleSeekTranscoding(data.position/1000)
+            }else{
+              playerManager.seek(data.position/1000);
+            }
+            
             const el = document.getElementById("progress-big-text");
             el.classList.remove("show");
           }
@@ -1056,8 +1061,26 @@ function displayFirstImage(url) {
     displayingManualImage = true; // flag pour gérer IDLE
 }
 
+
+function handleSeekTranscoding(seekTime) {
+    const playerManager = context.getPlayerManager()
+    
+    console.log(`[RECEIVER] CUSTOM_SEEK intercepté. Nouveau seek demandé: ${seekTime}s`);
+    
+    // 1. Envoyer un message de confirmation à Android pour lancer l'arrêt/redémarrage de FFmpeg.
+    // On réutilise le senderId pour s'assurer que seul l'émetteur est ciblé.
+    context.sendCustomMessage(IMAGE_NAMESPACE, senderId, {
+        type: 'SEEK_REQUESTED', // Ce message est le signal pour Android
+        seekTime: seekTime
+    });
+
+    // 2. Mettre à jour l'interface utilisateur/l'état (Optionnel, mais recommandé)
+    // On peut mettre le lecteur en pause ici pour éviter les problèmes pendant le redémarrage du transcode.
+    // playerManager.pause(); 
+}
+
 // 1. Définir l'intercepteur pour le message SEEK
-playerManager.setMessageInterceptor(
+/*playerManager.setMessageInterceptor(
     cast.framework.messages.MessageType.SEEK,
     (seekRequest) => {
         // seekRequest est l'objet qui contient les données de la requête de recherche
@@ -1090,7 +1113,7 @@ playerManager.setMessageInterceptor(
         // laissez le traitement par défaut de CAF s'appliquer.
         return seekRequest;
     }
-);
+);*/
 
 // ==================== LOAD INTERCEPTOR ====================
 // Cet interceptor reste : il collecte les metadata des LOAD CAF et permet au cast classique de fonctionner.
