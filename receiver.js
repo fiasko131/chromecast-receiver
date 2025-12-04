@@ -731,49 +731,28 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           const durationSec = data.durationSec;
           console.log("[RECEIVER] finalDuration trancoded",data.durationSec);
 
-          // Récupérer le MediaInfo actuel
-        const newMediaInfo = playerManager.getMediaInformation();
-        
-        // 1. Mettre à jour la durée totale
-        //mediaInfo.streamDuration = durationSec;
-
-        // 2. Changer le type de flux de LIVE à BUFFERED (Crucial!)
-        // Cela permet au lecteur de savoir que la durée est FIXE et que l'on peut Seek partout.
-        //mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
+        // Récupérer le MediaInfo actuel
+        const newMediaInfo = playerManager.getMediaInformation(),
         transcoding = false;
-        
         // 1. Sauvegarder la position actuelle avant la coupure
         const currentTime = playerManager.getCurrentTimeSec();
-        const finalDuration = durationSec; // Votre 8692.65
-
-        // 2. Construire un NOUVEAU LOAD REQUEST
-
-        newMediaInfo.contentId = data.finalUrl;
-        //newMediaInfo.contentType = playerManager.getMediaInformation().contentType;
-
         // ⭐ Les mises à jour critiques :
+        newMediaInfo.contentId = data.finalUrl;
         newMediaInfo.streamDuration = durationSec;
         newMediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
         console.log("[RECEIVER] final url",newMediaInfo.contentId);
         console.log("[RECEIVER] streamDuration",newMediaInfo.streamDuration);
         console.log("[RECEIVER] streamType",newMediaInfo.streamType);
-
         // 3. Préparer la requête de chargement
-        //const newLoadRequest = new cast.framework.messages.LoadRequestData();
-        //newLoadRequest.media = newMediaInfo;
-
+        const newLoadRequest = new cast.framework.messages.LoadRequestData();
+        newLoadRequest.media = newMediaInfo;
         // ⭐ Demander de démarrer la lecture à l'instant exact de l'arrêt
-        //newLoadRequest.currentTime = currentTime; 
-
+        newLoadRequest.currentTime = currentTime; 
         // 4. Exécuter le rechargement (C'est un appel de 'seek' sophistiqué)
         // Ceci est la seule façon de forcer le lecteur à reconstruire son état interne 
         // et à adopter la nouvelle duration.
-        //playerManager.load(newLoadRequest);
-       
-
-        // 3. Informer le lecteur CAF de la modification
-        playerManager.setMediaInformation(newMediaInfo, true);
-        playerManager.sendPlayerStateChange(true);
+        playerManager.load(newLoadRequest);
+      
         showBottomUi();
         startVideoProgressTimer();
           break;
