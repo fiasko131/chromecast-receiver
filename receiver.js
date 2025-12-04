@@ -748,6 +748,8 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         newLoadRequest.media = newMediaInfo;
         // ⭐ Demander de démarrer la lecture à l'instant exact de l'arrêt
         newLoadRequest.currentTime = currentTime; 
+        // ⭐ L'ajout essentiel pour la reprise automatique
+        newLoadRequest.autoplay = true;
         // 4. Exécuter le rechargement (C'est un appel de 'seek' sophistiqué)
         // Ceci est la seule façon de forcer le lecteur à reconstruire son état interne 
         // et à adopter la nouvelle duration.
