@@ -680,6 +680,8 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
       loadVideoViaCAF(url,title,mime,durationMs);  // simple délégation
     }
     const playerManager = context.getPlayerManager();
+    let newMediaInfo = null;
+    let newLoadRequest = null;
 
     switch (data.type) {
       case "GET_STATE_VIDEO":
@@ -740,7 +742,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           console.log("[RECEIVER] finalDuration trancoded",data.durationSec);
 
         // Récupérer le MediaInfo actuel
-        const newMediaInfo = playerManager.getMediaInformation();
+        newMediaInfo = playerManager.getMediaInformation();
         transcoding = false;
         // 1. Sauvegarder la position actuelle avant la coupure
         const currentTime = playerManager.getCurrentTimeSec();
@@ -752,7 +754,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         console.log("[RECEIVER] streamDuration",newMediaInfo.streamDuration);
         console.log("[RECEIVER] streamType",newMediaInfo.streamType);
         // 3. Préparer la requête de chargement
-        const newLoadRequest = new cast.framework.messages.LoadRequestData();
+        newLoadRequest = new cast.framework.messages.LoadRequestData();
         newLoadRequest.media = newMediaInfo;
         // ⭐ Demander de démarrer la lecture à l'instant exact de l'arrêt
         newLoadRequest.currentTime = currentTime; 
