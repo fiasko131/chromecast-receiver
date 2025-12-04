@@ -1061,15 +1061,16 @@ playerManager.setMessageInterceptor(
     cast.framework.messages.MessageType.SEEK,
     (seekRequest) => {
         // seekRequest est l'objet qui contient les données de la requête de recherche
-
+        
         const seekTime = seekRequest.currentTime;
+        console.log("[RECEIVER] SEEK intercepté ",seekTime);
         
         // 2. Vérifier si le seek dépasse la portion déjà transcodée 
         // (Vous devez avoir une variable de suivi de la 'maxCurrentDurationSec')
         const maxDurationKnown = playerManager.getMediaInformation().streamDuration; 
         
         // Si le seek est au-delà de la portion écrite et avant la fin (mode progressif)
-        if (seekTime > maxDurationKnown && !context.isTranscodingFinished) { // Ajoutez cette vérification côté JS si possible
+        if (seekTime > maxDurationKnown && transcoding) { // Ajoutez cette vérification côté JS si possible
             
             console.log(`[SEEK INTERCEPTED] Nouveau seek demandé: ${seekTime}s`);
             
