@@ -758,7 +758,29 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
       
         showBottomUi();
         startVideoProgressTimer();
-          break;
+        break;
+      case "SEEK_RESTART_READY":
+        const seekTime = message.seekTime;
+        const playerManager = context.getPlayerManager();
+
+        // Relancer le chargement du même média à la nouvelle position de seek
+        newMediaInfo = playerManager.getMediaInformation();
+        
+        newLoadRequest = new cast.framework.messages.LoadRequestData();
+        newLoadRequest.media = newMediaInfo; // Utilise la même URL
+        
+        // ⭐ Clé 1 : Positionner le lecteur Cast sur la timeline absolue
+        newLoadRequest.currentTime = seekTime; 
+        
+        // ⭐ Clé 2 : Reprendre la lecture immédiatement
+        newLoadRequest.autoplay = true; 
+        
+        playerManager.load(newLoadRequest);
+        
+        console.log(`[RECEIVER] Reprise du LOAD forcée à ${seekTime}s.`);
+        showBottomUi();
+        startVideoProgressTimer();
+        break;
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
         if (Array.isArray(data.urls)) {
@@ -1033,6 +1055,41 @@ function displayFirstImage(url) {
     firstImageShown = true;
     displayingManualImage = true; // flag pour gérer IDLE
 }
+
+// 1. Définir l'intercepteur pour le message SEEK
+playerManager.setMessageInterceptor(
+    cast.framework.messages.MessageType.SEEK,
+    (seekRequest) => {
+        // seekRequest est l'objet qui contient les données de la requête de recherche
+
+        const seekTime = seekRequest.currentTime;
+        
+        // 2. Vérifier si le seek dépasse la portion déjà transcodée 
+        // (Vous devez avoir une variable de suivi de la 'maxCurrentDurationSec')
+        const maxDurationKnown = playerManager.getMediaInformation().streamDuration; 
+        
+        // Si le seek est au-delà de la portion écrite et avant la fin (mode progressif)
+        if (seekTime > maxDurationKnown && !context.isTranscodingFinished) { // Ajoutez cette vérification côté JS si possible
+            
+            console.log(`[SEEK INTERCEPTED] Nouveau seek demandé: ${seekTime}s`);
+            
+            // 3. Envoyer un message personnalisé au Sender Android
+            // Le Sender doit recevoir ce message et savoir qu'il doit redémarrer FFmpeg
+            context.sendCustomMessage(IMAGE_NAMESPACE, null, {
+                type: 'SEEK_REQUESTED',
+                seekTime: seekTime
+            });
+            
+            // 4. Important: Retourner la requête pour que CAF commence la mise en mémoire tampon.
+            // Le lecteur se mettra en pause/buffering en attendant le nouveau flux.
+            return seekRequest; 
+        }
+        
+        // Si le seek est valide (dans la portion écrite ou après la fin du transcodage), 
+        // laissez le traitement par défaut de CAF s'appliquer.
+        return seekRequest;
+    }
+);
 
 // ==================== LOAD INTERCEPTOR ====================
 // Cet interceptor reste : il collecte les metadata des LOAD CAF et permet au cast classique de fonctionner.
