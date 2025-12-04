@@ -710,8 +710,9 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         case "SEEK_VIDEO":
           if (playerManager && typeof data.position === "number") {
             // ⚡ seek en secondes
-            console.log("seek to "+data.position/1000);
+            console.log("[RECEIVER]"+data.position/1000);
             if (transcoding){
+              console.log("[RECEIVER] seekTranscoding");
               handleSeekTranscoding(data.position/1000)
             }else{
               playerManager.seek(data.position/1000);
@@ -1063,7 +1064,7 @@ function displayFirstImage(url) {
 
 
 function handleSeekTranscoding(seekTime) {
-    const playerManager = context.getPlayerManager()
+  
     
     console.log(`[RECEIVER] CUSTOM_SEEK intercepté. Nouveau seek demandé: ${seekTime}s`);
     
