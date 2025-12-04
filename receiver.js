@@ -30,6 +30,7 @@ let videoProgressTimer = null;
 let seekingInProgress = false;
 let transcoding = false;
 let seekBarDuration = 0;
+let offsetSeekProgressif = 0;
 
 
 // ==================== IMAGE NAMESPACE & STATE ====================
@@ -681,7 +682,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
     }
     const playerManager = context.getPlayerManager();
     let newMediaInfo = null;
-    let newLoadRequest = null;
+    let newLoadRequest = null
 
     switch (data.type) {
       case "GET_STATE_VIDEO":
@@ -714,6 +715,11 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           if (playerManager && typeof data.position === "number") {
             // ⚡ seek en secondes
             console.log("[RECEIVER]"+data.position/1000);
+            try {
+              playerManager.pause();
+            } catch (err) {
+              console.warn("Erreur pause via CAF:", err);
+            }
             if (transcoding){
               console.log("[RECEIVER] seekTranscoding");
               handleSeekTranscoding(data.position/1000)
@@ -769,6 +775,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         startVideoProgressTimer();
         break;
       case "SEEK_RESTART_READY":
+
         const seekTime = data.seekTime;
         
 
@@ -778,7 +785,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         newLoadRequest = new cast.framework.messages.LoadRequestData();
         
         // --- L'étape cruciale : Cache-Busting ---
-        /*const oldUrl = newMediaInfo.contentId.split('?')[0]; // Enlever tout paramètre existant
+        const oldUrl = newMediaInfo.contentId.split('?')[0]; // Enlever tout paramètre existant
         // Ajout d'un paramètre unique (ex: un timestamp ou un nombre aléatoire)
         const cacheBuster = Math.floor(Math.random() * 1000000); 
         const newUrl = `${oldUrl}?cache=${cacheBuster}`; 
@@ -786,7 +793,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
 
         // Mettre à jour le contentId (l'URL) dans le MediaInfo
         newMediaInfo.contentId = newUrl; // ⭐ Le changement est ici
-        newLoadRequest.media = newMediaInfo; // Utilise la même URL*/
+        newLoadRequest.media = newMediaInfo; // Utilise la même URL
         
         // ⭐ Clé 1 : Positionner le lecteur Cast sur la timeline absolue
         newLoadRequest.currentTime = seekTime; 
@@ -797,6 +804,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         playerManager.load(newLoadRequest);
         
         console.log(`[RECEIVER] Reprise du LOAD forcée à ${seekTime}s.`);
+        offsetSeekProgressif = seekTime;
         showBottomUi();
         startVideoProgressTimer();
         break;
@@ -1449,6 +1457,7 @@ function startVideoProgressTimer() {
     if (!playerManager) return;
 
     const current = playerManager.getCurrentTimeSec();
+    if (transcoding) current = current + offsetSeekProgressif;
     let duration = 0;
     if (!transcoding)
       duration = playerManager.getDurationSec();
