@@ -775,10 +775,8 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         startVideoProgressTimer();
         break;
       case "SEEK_RESTART_READY":
-
+        stopVideoProgressTimer();
         const seekTime = data.seekTime;
-        
-
         // Relancer le chargement du même média à la nouvelle position de seek
         newMediaInfo = playerManager.getMediaInformation();
         
@@ -1456,8 +1454,8 @@ function startVideoProgressTimer() {
     
     if (!playerManager) return;
 
-    const current = playerManager.getCurrentTimeSec();
-    if (transcoding) current = current + offsetSeekProgressif;
+    let current = playerManager.getCurrentTimeSec();
+    //if (transcoding) current = current + offsetSeekProgressif;
     let duration = 0;
     if (!transcoding)
       duration = playerManager.getDurationSec();
