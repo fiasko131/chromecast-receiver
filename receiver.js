@@ -1484,7 +1484,7 @@ document.addEventListener("click", () => {
 // Définir le timeout à 1 heure (3600 secondes)
 context.setInactivityTimeout(3600);
 
-
+context.loggerLevel = cast.framework.LoggerLevel.ERROR;
 
 
 
@@ -1493,31 +1493,6 @@ context.setInactivityTimeout(3600);
 
 // ==================== START RECEIVER ========================
 context.start();
-// Maintenant le debug logger est disponible
-if (cast.debug && cast.debug.CastDebugLogger) {
-    const castDebugLogger = cast.debug.CastDebugLogger.getInstance();
 
-    // Active l'affichage des logs sur la TV
-    castDebugLogger.setEnabled(true);
-
-    const TAG = '[RECEIVER]';
-
-    // Limiter CAF aux erreurs, laisser vos logs visibles
-    castDebugLogger.loggerLevelByTags = {
-        '*': cast.framework.LoggerLevel.ERROR,
-        [TAG]: cast.framework.LoggerLevel.INFO
-    };
-
-    // Redirection console.log / console.warn
-    console.log = (...args) => castDebugLogger.info(TAG, args.join(' '));
-    console.warn = (...args) => castDebugLogger.warn(TAG, args.join(' '));
-
-    // Capter les erreurs JS non catchées
-    window.onerror = (msg, src, line, col, err) => {
-        castDebugLogger.error(TAG, `[JS ERROR] ${msg} @ ${src}:${line}:${col}`);
-    };
-} else {
-    console.warn('cast.debug.CastDebugLogger non disponible (vérifier CAF v3)');
-}
 
 
