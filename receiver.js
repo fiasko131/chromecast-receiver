@@ -767,7 +767,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         startVideoProgressTimer();
         break;
       case "SEEK_RESTART_READY":
-        const seekTime = message.seekTime;
+        const seekTime = data.seekTime;
         
 
         // Relancer le chargement du même média à la nouvelle position de seek
