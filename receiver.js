@@ -775,6 +775,14 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         
         newLoadRequest = new cast.framework.messages.LoadRequestData();
         newLoadRequest.media = newMediaInfo; // Utilise la même URL
+        // --- L'étape cruciale : Cache-Busting ---
+        const oldUrl = newMediaInfo.contentId.split('?')[0]; // Enlever tout paramètre existant
+        // Ajout d'un paramètre unique (ex: un timestamp ou un nombre aléatoire)
+        const cacheBuster = Math.floor(Math.random() * 1000000); 
+        const newUrl = `${oldUrl}?cache=${cacheBuster}`; 
+
+        // Mettre à jour le contentId (l'URL) dans le MediaInfo
+        newMediaInfo.contentId = newUrl; // ⭐ Le changement est ici
         
         // ⭐ Clé 1 : Positionner le lecteur Cast sur la timeline absolue
         newLoadRequest.currentTime = seekTime; 
