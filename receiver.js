@@ -732,7 +732,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           console.log("[RECEIVER] finalDuration trancoded",data.durationSec);
 
         // Récupérer le MediaInfo actuel
-        const newMediaInfo = playerManager.getMediaInformation(),
+        const newMediaInfo = playerManager.getMediaInformation();
         transcoding = false;
         // 1. Sauvegarder la position actuelle avant la coupure
         const currentTime = playerManager.getCurrentTimeSec();
