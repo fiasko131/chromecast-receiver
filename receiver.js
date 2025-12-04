@@ -1456,6 +1456,10 @@ function startVideoProgressTimer() {
 
     let current = playerManager.getCurrentTimeSec();
     //if (transcoding) current = current + offsetSeekProgressif;
+    // Si l'offset est garanti d'être 0.0 quand le transcodage commence à 0, c'est ok.
+    if (transcoding && offsetSeekProgressif > 0) { // Meilleure vérification
+        current = current + offsetSeekProgressif;
+    }
     let duration = 0;
     if (!transcoding)
       duration = playerManager.getDurationSec();
