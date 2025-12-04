@@ -1483,33 +1483,42 @@ document.addEventListener("click", () => {
 
 // Définir le timeout à 1 heure (3600 secondes)
 context.setInactivityTimeout(3600);
-// 1. Définir le niveau de log
-// Debug logger CAF v3
-const castDebugLogger = cast.debug.CastDebugLogger.getInstance();
 
-// Active l'affichage des logs sur la TV
-castDebugLogger.setEnabled(true);
 
-// Définition de ton tag
-const TAG = '[RECEIVER]';
 
-// Configure le niveau de logs :
-// * = toutes les sources de logs (CAF inclus)
-// On limite CAF : uniquement les erreurs
-castDebugLogger.loggerLevelByTags = {
-  '*': cast.debug.LoggerLevel.ERROR,
-  [TAG]: cast.debug.LoggerLevel.INFO, // tes logs receiver complets
-};
+context.addEventListener(
+  cast.framework.CastReceiverContextEventType.READY,
+  () => {
+    const castDebugLogger = cast.debug.CastDebugLogger.getInstance();
+    // Active l'affichage des logs sur la TV
+    castDebugLogger.setEnabled(true);
 
-// Redirection console.log → Logger côté TV
-console.log = (...args) => {
-  castDebugLogger.info(TAG, args.map(a => String(a)).join(' '));
-};
+    // Définition de ton tag
+    const TAG = '[RECEIVER]';
 
-// Redirection console.warn → Logger côté TV
-console.warn = (...args) => {
-  castDebugLogger.warn(TAG, args.map(a => String(a)).join(' '));
-};
+    // Configure le niveau de logs :
+    // * = toutes les sources de logs (CAF inclus)
+    // On limite CAF : uniquement les erreurs
+    castDebugLogger.loggerLevelByTags = {
+      '*': cast.debug.LoggerLevel.ERROR,
+      [TAG]: cast.debug.LoggerLevel.INFO, // tes logs receiver complets
+    };
+
+    // Redirection console.log → Logger côté TV
+    console.log = (...args) => {
+      castDebugLogger.info(TAG, args.map(a => String(a)).join(' '));
+    };
+
+    // Redirection console.warn → Logger côté TV
+    console.warn = (...args) => {
+      castDebugLogger.warn(TAG, args.map(a => String(a)).join(' '));
+    };
+  }
+);
+
+
+
+
 // ==================== START RECEIVER ========================
 context.start();
 
