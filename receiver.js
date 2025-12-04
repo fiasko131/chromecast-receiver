@@ -1070,10 +1070,13 @@ function handleSeekTranscoding(seekTime) {
     
     // 1. Envoyer un message de confirmation à Android pour lancer l'arrêt/redémarrage de FFmpeg.
     // On réutilise le senderId pour s'assurer que seul l'émetteur est ciblé.
-    context.sendCustomMessage(IMAGE_NAMESPACE, senderId, {
+    context.sendCustomMessage(IMAGE_NAMESPACE, imagesSenderId, {
         type: 'SEEK_REQUESTED', // Ce message est le signal pour Android
         seekTime: seekTime
     });
+
+  
+
 
     // 2. Mettre à jour l'interface utilisateur/l'état (Optionnel, mais recommandé)
     // On peut mettre le lecteur en pause ici pour éviter les problèmes pendant le redémarrage du transcode.
@@ -1437,8 +1440,8 @@ function startVideoProgressTimer() {
     if (!transcoding)
       duration = playerManager.getDurationSec();
     else duration = seekBarDuration;
-    console.log("[RECEIVER] duration=", duration);
-    console.log("[RECEIVER] current=", current);
+    //console.log("[RECEIVER] duration=", duration);
+    //console.log("[RECEIVER] current=", current);
 
     if (!duration || duration <= 0) return;
     if (isNaN(current)) return;
