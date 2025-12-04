@@ -679,6 +679,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
     function castLoadVideoCAF(url,title,mime,durationMs) {
       loadVideoViaCAF(url,title,mime,durationMs);  // simple délégation
     }
+    const playerManager = context.getPlayerManager();
 
     switch (data.type) {
       case "GET_STATE_VIDEO":
@@ -767,7 +768,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         break;
       case "SEEK_RESTART_READY":
         const seekTime = message.seekTime;
-        const playerManager = context.getPlayerManager();
+        
 
         // Relancer le chargement du même média à la nouvelle position de seek
         newMediaInfo = playerManager.getMediaInformation();
