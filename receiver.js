@@ -149,7 +149,7 @@ let lastImageIndex = 0;
 function isVideoUrl(url) {
   if (!url) return false;
   if (url.startsWith("{")) return true;
-  
+
 
   try {
     const u = new URL(url);
@@ -884,9 +884,11 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                       );*/
 
                   } else if (first.startsWith("http")) {
-                    if (first.includes("progressive.mp4")) transcoding = true;
+                      if (first.includes("progressive.mp4")) transcoding = true;
                       console.log("[RECEIVER] transcoding "+transcoding);
-                      seekBarDuration = data.seekBarDuration/1000;
+                      if (data.seekBarDuration != null) {
+                        seekBarDuration = data.seekBarDuration/1000;
+                      }
                       console.log("[RECEIVER] seekBarDuration "+seekBarDuration);
                       // URL classique → lecture CAF standard
                       // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
@@ -929,6 +931,13 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
 
       case 'SET_INDEX':
         if (typeof data.index === 'number') {
+          if (data.urls != null && Array.isArray(data.urls)) {
+            // on a recu une mise à jour de la liste d'url
+            imageList = data.urls.slice(); // clone
+          }
+          
+          
+
           const idxSet = Math.min(Math.max(0, data.index), imageList.length - 1);
           currentImageIndex = idxSet;
           const urlToShow = imageList[idxSet];
@@ -941,6 +950,12 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           }
 
           if (isVideoUrl(urlToShow)) {
+            if (urlToShow.includes("progressive.mp4")) transcoding = true;
+            console.log("[RECEIVER] transcoding "+transcoding);
+            if (data.seekBarDuration != null) {
+                seekBarDuration = data.seekBarDuration/1000;
+            }
+            console.log("[RECEIVER] seekBarDuration "+seekBarDuration);
             // on charge miniature si existe
             const videoThumbnailSmall = document.getElementById("video-thumbnail-small");
             const videoThumbnail = document.getElementById("video-thumbnail");
