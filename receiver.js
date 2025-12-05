@@ -1103,13 +1103,13 @@ function handleSeekTranscoding(seekTime) {
 }
 
 // 1. Définir l'intercepteur pour le message SEEK
-/*playerManager.setMessageInterceptor(
+playerManager.setMessageInterceptor(
     cast.framework.messages.MessageType.SEEK,
     (seekRequest) => {
         // seekRequest est l'objet qui contient les données de la requête de recherche
-        
-        const seekTime = seekRequest.currentTime;
         console.log("[RECEIVER] SEEK intercepté ",seekTime);
+        const seekTime = seekRequest.currentTime;
+        
         
         // 2. Vérifier si le seek dépasse la portion déjà transcodée 
         // (Vous devez avoir une variable de suivi de la 'maxCurrentDurationSec')
@@ -1136,7 +1136,7 @@ function handleSeekTranscoding(seekTime) {
         // laissez le traitement par défaut de CAF s'appliquer.
         return seekRequest;
     }
-);*/
+);
 
 // ==================== LOAD INTERCEPTOR ====================
 // Cet interceptor reste : il collecte les metadata des LOAD CAF et permet au cast classique de fonctionner.
