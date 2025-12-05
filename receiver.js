@@ -950,6 +950,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           }
 
           if (isVideoUrl(urlToShow)) {
+            offsetSeekProgressif = 0;
             if (urlToShow.includes("progressive.mp4")) transcoding = true;
             console.log("[RECEIVER] transcoding "+transcoding);
             if (data.seekBarDuration != null) {
