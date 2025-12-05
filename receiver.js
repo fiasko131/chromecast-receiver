@@ -149,12 +149,13 @@ let lastImageIndex = 0;
 function isVideoUrl(url) {
   if (!url) return false;
   if (url.startsWith("{")) return true;
+  
 
   try {
     const u = new URL(url);
 
     // Condition 1 : l'URL contient /v
-    const hasV = u.pathname.endsWith("/v") || u.pathname.includes("/v/");
+    const hasV = u.pathname.endsWith("/v") || u.pathname.includes("/v/") || url.includes(":9020");
 
 
     return hasV ;
@@ -1103,7 +1104,7 @@ function handleSeekTranscoding(seekTime) {
 }
 
 // 1. Définir l'intercepteur pour le message SEEK
-playerManager.setMessageInterceptor(
+/*playerManager.setMessageInterceptor(
     cast.framework.messages.MessageType.SEEK,
     (seekRequest) => {
         // seekRequest est l'objet qui contient les données de la requête de recherche
@@ -1136,7 +1137,7 @@ playerManager.setMessageInterceptor(
         // laissez le traitement par défaut de CAF s'appliquer.
         return seekRequest;
     }
-);
+);*/
 
 // ==================== LOAD INTERCEPTOR ====================
 // Cet interceptor reste : il collecte les metadata des LOAD CAF et permet au cast classique de fonctionner.
