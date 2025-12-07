@@ -811,11 +811,11 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         console.log("[RECEIVER] SHOW_SUBTITLE ", "language "+data.language);
         if (Array.isArray(data.listLanguages)) {
           newMediaInfo = playerManager.getMediaInformation();
-          console.log("[RECEIVER] SHOW_SUBTITLE ", "mediaInfo "+mediaInfo);
-          console.log("[RECEIVER] SHOW_SUBTITLE ", "mediaInfo.tracks "+mediaInfo.tracks);
-          if (!mediaInfo || !mediaInfo.tracks) return;
+          console.log("[RECEIVER] SHOW_SUBTITLE ", "mediaInfo "+newMediaInfo);
+          console.log("[RECEIVER] SHOW_SUBTITLE ", "mediaInfo.tracks "+newMediaInfo.tracks);
+          if (!newMediaInfo || !newMediaInfo.tracks) return;
           const lang = data.language;
-          for (const track of media.tracks) {
+          for (const track of newMediaInfo.tracks) {
             // track.language devrait être "fr", "en", etc.
             console.log("[RECEIVER] SHOW_SUBTITLE ", "track.type "+track.type);
             console.log("[RECEIVER] SHOW_SUBTITLE ", "track.language "+track.language);
