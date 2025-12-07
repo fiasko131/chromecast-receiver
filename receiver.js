@@ -551,7 +551,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     // ───────────────────────────────────────────────
     // 🎬 2. Fonction CAF avec détection automatique
     // ───────────────────────────────────────────────
-    async function loadVideoViaCAF(url, title = "Video", contentType = "video/mp4", durationMs = 0,listLanguages, signal = null) {
+    async function loadVideoViaCAF(url, title = "Video", contentType = "video/mp4", durationMs = 0,vttUrls,subsInfoList, signal = null) {
       console.log("🎬 [CAF] Chargement vidéo via PlayerManager:", url);
 
       let durationSec = 0;
@@ -600,21 +600,19 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       
       mediaInfo.metadata = meta;
 
-      if (Array.isArray(listLanguages) && listLanguages.length > 0) {
-
-        mediaInfo.tracks = listLanguages.map((lang, idx) => {
+      if (Array.isArray(vttUrls) && vttUrls.length > 0) {
+          mediaInfo.tracks = vttUrls.map((url, idx)=>{
           const track = new cast.framework.messages.Track();
           track.trackId = 100 + idx;
           track.type = cast.framework.messages.TrackType.TEXT;
           track.subtype = cast.framework.messages.TextTrackType.SUBTITLES;
-          track.language = lang;
-          track.name = lang.toUpperCase();
-
-          // ❌ PAS DE trackContentId
-          // ❌ PAS DE trackContentType
-
+          track.trackContentId = url;          // <- important
+          track.trackContentType = "text/vtt"; // <- important
+          track.name = subsInfoList[idx].language.toUpperCase();
+          track.language = subsInfoList[idx].language;
           return track;
         });
+        
       }
 
 
@@ -946,8 +944,22 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                         currentAbortController.abort();
                       }
                       currentAbortController = new AbortController();
-                      console.log("[RECEIVER] listLanguages "+data.listLanguages);
-                      loadVideoViaCAF(first, data.title, mimeType, durationMs,data.listLanguages,currentAbortController.signal);
+                      console.log("[RECEIVER] vttUrls "+data.vttUrls);
+                      console.log("[RECEIVER] listLanguages "+data.Languages);
+                      const urls = data.vttUrls || [];
+                      const languages = data.languages || [];
+
+                      // On garde ça global pour servir à build mediaInfo.tracks
+                      if(vttUrls != null){
+                          subsInfoList = urls.map((url, idx) => ({
+                          url,
+                          lang: languages[idx]
+                        }));
+                      }
+                      
+
+                      console.log("[RECEIVER] subsInfoList", subsInfoList);
+                      loadVideoViaCAF(first, data.title, mimeType, durationMs,data.vttUrls,subsInfoList,currentAbortController.signal);
 
                   } else {
                       console.error("[RECEIVER] Valeur inattendue dans la liste: ", first);
