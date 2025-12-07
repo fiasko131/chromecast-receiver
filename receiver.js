@@ -807,6 +807,23 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         showBottomUi();
         startVideoProgressTimer();
         break;
+      case "SHOW_SUBTITLE":
+        if (Array.isArray(data.listLanguages)) {
+          newMediaInfo = playerManager.getMediaInformation();
+          if (!mediaInfo || !mediaInfo.tracks) return;
+          const lang = data.language;
+          for (const track of media.tracks) {
+            // track.language devrait être "fr", "en", etc.
+            if (track.type === cast.framework.messages.TrackType.TEXT &&
+                track.language === lang) {
+
+              playerManager.setActiveTrackIds([track.trackId]);
+              break;
+            }
+          }
+        }
+
+        break;
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
         if (Array.isArray(data.urls)) {
