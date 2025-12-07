@@ -648,6 +648,15 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
     startIndex = 0;
   }
 
+  console.log("[RECEIVER] param:", listLanguages);
+  if (Array.isArray(listLanguages)) {
+    console.log("[RECEIVER] length:", listLanguages.length);
+    console.log("[RECEIVER] values:", JSON.stringify(listLanguages));
+  } else {
+    console.warn("⚠️ listLanguages n'est PAS un array !");
+  }
+
+
   // 1) Construire les QueueItem
   const items = segmentList.map((segUrl) => {
     const mediaInfo = new cast.framework.messages.MediaInformation();
@@ -937,6 +946,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                         currentAbortController.abort();
                       }
                       currentAbortController = new AbortController();
+                      console.log("[RECEIVER] listLanguages "+data.listLanguages);
                       loadVideoViaCAF(first, data.title, mimeType, durationMs,data.listLanguages,currentAbortController.signal);
 
                   } else {
