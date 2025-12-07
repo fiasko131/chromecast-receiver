@@ -551,7 +551,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
     // ───────────────────────────────────────────────
     // 🎬 2. Fonction CAF avec détection automatique
     // ───────────────────────────────────────────────
-    async function loadVideoViaCAF(url, title = "Video", contentType = "video/mp4", durationMs = 0, signal = null) {
+    async function loadVideoViaCAF(url, title = "Video", contentType = "video/mp4", durationMs = 0,listLanguages, signal = null) {
       console.log("🎬 [CAF] Chargement vidéo via PlayerManager:", url);
 
       let durationSec = 0;
@@ -599,6 +599,24 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       // ⭐ Ajouter la miniature
       
       mediaInfo.metadata = meta;
+
+      if (Array.isArray(listLanguages) && listLanguages.length > 0) {
+
+        mediaInfo.tracks = listLanguages.map((lang, idx) => {
+          const track = new cast.framework.messages.Track();
+          track.trackId = 100 + idx;
+          track.type = cast.framework.messages.TrackType.TEXT;
+          track.subtype = cast.framework.messages.TextTrackType.SUBTITLES;
+          track.language = lang;
+          track.name = lang.toUpperCase();
+
+          // ❌ PAS DE trackContentId
+          // ❌ PAS DE trackContentType
+
+          return track;
+        });
+      }
+
 
       const req = new cast.framework.messages.LoadRequestData();
       req.media = mediaInfo;
@@ -809,8 +827,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         break;
       case "SHOW_SUBTITLE":
         console.log("[RECEIVER] SHOW_SUBTITLE ", "language "+data.language);
-        if (Array.isArray(data.listLanguages)) {
-          newMediaInfo = playerManager.getMediaInformation();
+        newMediaInfo = playerManager.getMediaInformation();
           console.log("[RECEIVER] SHOW_SUBTITLE ", "mediaInfo "+newMediaInfo);
           console.log("[RECEIVER] SHOW_SUBTITLE ", "mediaInfo.tracks "+newMediaInfo.tracks);
           if (!newMediaInfo || !newMediaInfo.tracks) return;
@@ -825,7 +842,6 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
               break;
             }
           }
-        }
 
         break;
       case 'LOAD_IMAGE_LIST':
@@ -921,7 +937,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                         currentAbortController.abort();
                       }
                       currentAbortController = new AbortController();
-                      loadVideoViaCAF(first, data.title, mimeType, durationMs, currentAbortController.signal);
+                      loadVideoViaCAF(first, data.title, mimeType, durationMs,data.listLanguages,currentAbortController.signal);
 
                   } else {
                       console.error("[RECEIVER] Valeur inattendue dans la liste: ", first);
