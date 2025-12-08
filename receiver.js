@@ -945,7 +945,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                       }
                       currentAbortController = new AbortController();
                       console.log("[RECEIVER] vttUrls "+data.vttUrls);
-                      console.log("[RECEIVER] listLanguages "+data.Languages);
+                      console.log("[RECEIVER] listLanguages "+data.languages);
                       const vttUrls = data.vttUrls || [];
                       const languages = data.languages || [];
                       let subsInfoList = null;
