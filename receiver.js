@@ -621,7 +621,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       req.autoplay = true;
 
       displayingManualVideo = false;
-      playerManager.setActiveTrackIds([101]);
+      
 
       try {
         await playerManager.load(req);
@@ -1641,6 +1641,9 @@ playerManager.addEventListener(
     }
     if (!isAudioContent){
       if (state === "PLAYING"){
+         // ICI tu peux activer une piste
+        const ttm = playerManager.getTextTracksManager();
+        ttm.setActiveByIds([101]);
         if (seekingInProgress) {
               seekingInProgress = false;
               showBottomUiTemporarily();
