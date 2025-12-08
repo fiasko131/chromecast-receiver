@@ -857,10 +857,15 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         newLoadRequest.autoplay = true; 
           
         playerManager.load(newLoadRequest);
-         
+        if (currentSubTrackId != 0){
+          setTimeout(() => {
+            ttm = playerManager.getTextTracksManager();
+            ttm.setActiveByIds([currentSubTrackId]);
+          }, 100);
+        }
         console.log(`[RECEIVER] Reprise du LOAD forcée à ${seekTime}s.`);
         offsetSeekProgressif = seekTime;
-        showBottomUi();
+        //showBottomUi();
         startVideoProgressTimer();
         break;
       case "SHOW_SUBTITLE":
