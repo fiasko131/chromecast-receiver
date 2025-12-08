@@ -31,6 +31,7 @@ let seekingInProgress = false;
 let transcoding = false;
 let seekBarDuration = 0;
 let offsetSeekProgressif = 0;
+let startSubsAfterPlay = false;
 
 
 // ==================== IMAGE NAMESPACE & STATE ====================
@@ -858,10 +859,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           
         playerManager.load(newLoadRequest);
         if (currentSubTrackId != 0){
-          setTimeout(() => {
-            ttm = playerManager.getTextTracksManager();
-            ttm.setActiveByIds([currentSubTrackId]);
-          }, 100);
+           startSubsAfterPlay = true;
         }
         console.log(`[RECEIVER] Reprise du LOAD forcée à ${seekTime}s.`);
         offsetSeekProgressif = seekTime;
@@ -1673,11 +1671,12 @@ playerManager.addEventListener(
     }
     if (!isAudioContent){
       if (state === "PLAYING"){
-          /*if (currentSubTrackId != 0){
+          if (currentSubTrackId != 0 && startSubsAfterPlay){
+             startSubsAfterPlay = false;
               //ICI tu peux activer une piste
               const ttm = playerManager.getTextTracksManager();
-              ttm.setActiveByIds([101]);
-          }*/
+              ttm.setActiveByIds([currentSubTrackId]);
+          }
          
         if (seekingInProgress) {
               seekingInProgress = false;
