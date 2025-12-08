@@ -139,6 +139,7 @@ let v = null // video player;
 let currentAbortController = null;  // pour annuler la sonde HTML5 si nécessaire
 let thumbUrl = null; // video thumnnailUrl pour custom
 let lastImageIndex = 0;
+let currentSubTrackId = 0;
 
 
 
@@ -802,13 +803,40 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         startVideoProgressTimer();
         break;
       case "SEEK_RESTART_READY":
-        stopVideoProgressTimer();
-        const seekTime = data.seekTime;
-        // Relancer le chargement du même média à la nouvelle position de seek
-        newMediaInfo = playerManager.getMediaInformation();
-        
+          stopVideoProgressTimer();
+          const seekTime = data.seekTime;
+          newMediaInfo = playerManager.getMediaInformation();
+          // On récupère les sous titres si existants
+          console.log("[RECEIVER] vttUrls "+data.vttUrls);
+          console.log("[RECEIVER] listLanguages "+data.languages);
+          const vttUrls = data.vttUrls || [];
+          const languages = data.languages || [];
+          let subsInfoList = null;
+          // On garde ça global pour servir à build mediaInfo.tracks
+          if(vttUrls != null){
+              subsInfoList = vttUrls.map((url, idx) => ({
+                url,
+                language: languages[idx]
+              }));
+              if (Array.isArray(vttUrls) && vttUrls.length > 0) {
+                  newMediaInfo.tracks = vttUrls.map((url, idx)=>{
+                  const track = new cast.framework.messages.Track();
+                  track.trackId = 100 + idx;
+                  track.type = cast.framework.messages.TrackType.TEXT;
+                  track.subtype = cast.framework.messages.TextTrackType.SUBTITLES;
+                  track.trackContentId = url;          // <- important
+                  track.trackContentType = "text/vtt"; // <- important
+                  track.name = subsInfoList[idx].language.toUpperCase();
+                  track.language = subsInfoList[idx].language;
+                  return track;
+              });
+          
+            }
+        }else{
+          currentSubTrackId = 0;
+        }
         newLoadRequest = new cast.framework.messages.LoadRequestData();
-        
+          
         // --- L'étape cruciale : Cache-Busting ---
         const oldUrl = newMediaInfo.contentId.split('?')[0]; // Enlever tout paramètre existant
         // Ajout d'un paramètre unique (ex: un timestamp ou un nombre aléatoire)
@@ -816,18 +844,18 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         const newUrl = `${oldUrl}?cache=${cacheBuster}`; 
         console.log("[RECEIVER] nouvelle url ",newUrl);
 
-        // Mettre à jour le contentId (l'URL) dans le MediaInfo
+          // Mettre à jour le contentId (l'URL) dans le MediaInfo
         newMediaInfo.contentId = newUrl; // ⭐ Le changement est ici
         newLoadRequest.media = newMediaInfo; // Utilise la même URL
-        
-        // ⭐ Clé 1 : Positionner le lecteur Cast sur la timeline absolue
+          
+          // ⭐ Clé 1 : Positionner le lecteur Cast sur la timeline absolue
         newLoadRequest.currentTime = seekTime; 
-        
-        // ⭐ Clé 2 : Reprendre la lecture immédiatement
+          
+          // ⭐ Clé 2 : Reprendre la lecture immédiatement
         newLoadRequest.autoplay = true; 
-        
+          
         playerManager.load(newLoadRequest);
-        
+          
         console.log(`[RECEIVER] Reprise du LOAD forcée à ${seekTime}s.`);
         offsetSeekProgressif = seekTime;
         showBottomUi();
@@ -851,7 +879,8 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
             }
           }*/
           const ttm = playerManager.getTextTracksManager();
-          ttm.setActiveByIds([102]);
+          ttm.setActiveByIds([101]);
+          currentSubTrackId = 101;
           showBottomUi()
 
 
