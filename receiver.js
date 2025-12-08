@@ -1668,11 +1668,11 @@ playerManager.addEventListener(
     }
     if (!isAudioContent){
       if (state === "PLAYING"){
-          if (currentSubTrackId != 0){
+          /*if (currentSubTrackId != 0){
               //ICI tu peux activer une piste
               const ttm = playerManager.getTextTracksManager();
               ttm.setActiveByIds([101]);
-          }
+          }*/
          
         if (seekingInProgress) {
               seekingInProgress = false;
