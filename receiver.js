@@ -711,6 +711,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
     const playerManager = context.getPlayerManager();
     let newMediaInfo = null;
     let newLoadRequest = null
+    let ttm = null;
 
     switch (data.type) {
       case "GET_STATE_VIDEO":
@@ -856,38 +857,26 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         newLoadRequest.autoplay = true; 
           
         playerManager.load(newLoadRequest);
-        const ttm = playerManager.getTextTracksManager();
-        ttm.setActiveByIds([101]);
-        currentSubTrackId = 101;
-          
+         
         console.log(`[RECEIVER] Reprise du LOAD forcée à ${seekTime}s.`);
         offsetSeekProgressif = seekTime;
         showBottomUi();
         startVideoProgressTimer();
         break;
       case "SHOW_SUBTITLE":
-        console.log("[RECEIVER] SHOW_SUBTITLE ", "language "+data.language);
-        newMediaInfo = playerManager.getMediaInformation();
-          console.log("[RECEIVER] SHOW_SUBTITLE ", "mediaInfo "+newMediaInfo);
-          console.log("[RECEIVER] SHOW_SUBTITLE ", "mediaInfo.tracks "+newMediaInfo.tracks);
-          /*if (!newMediaInfo || !newMediaInfo.tracks) return;
-          const lang = data.language;
-          for (const track of newMediaInfo.tracks) {
-            // track.language devrait être "fr", "en", etc.
-            console.log("[RECEIVER] SHOW_SUBTITLE ", "track.type "+track.type);
-            console.log("[RECEIVER] SHOW_SUBTITLE ", "track.language "+track.language);
-            if (track.type === cast.framework.messages.TrackType.TEXT &&
-                track.language === lang) {
-              playerManager.setActiveTrackIds([track.trackId]);
-              break;
-            }
-          }*/
-          const ttma = playerManager.getTextTracksManager();
-          ttma.setActiveByIds([101]);
-          currentSubTrackId = 101;
+       
+          console.log("[RECEIVER] SHOW_SUBTITLE ", "trackId "+data.trackId);
+          currentSubTrackId = data.trackId;
+          
+          ttm = playerManager.getTextTracksManager();
+          ttm.setActiveByIds([currentSubTrackId]);
           showBottomUi()
-
-
+        break;
+        case "HIDE_SUBTITLE":
+          currentSubTrackId = 0;
+          ttm = playerManager.getTextTracksManager();
+          ttm.setActiveByIds([]);
+          showBottomUi()
         break;
       case 'LOAD_IMAGE_LIST':
       case 'LOAD_LIST':
@@ -1027,6 +1016,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         break;
 
       case 'SET_INDEX':
+        currentSubTrackId = 0;
         if (typeof data.index === 'number') {
           if (data.urls != null && Array.isArray(data.urls)) {
             // on a recu une mise à jour de la liste d'url
@@ -1678,9 +1668,12 @@ playerManager.addEventListener(
     }
     if (!isAudioContent){
       if (state === "PLAYING"){
-         // ICI tu peux activer une piste
-        //const ttm = playerManager.getTextTracksManager();
-        //ttm.setActiveByIds([101]);
+          if (currentSubTrackId != 0){
+              //ICI tu peux activer une piste
+              const ttm = playerManager.getTextTracksManager();
+              ttm.setActiveByIds([101]);
+          }
+         
         if (seekingInProgress) {
               seekingInProgress = false;
               showBottomUiTemporarily();
