@@ -946,12 +946,12 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                       currentAbortController = new AbortController();
                       console.log("[RECEIVER] vttUrls "+data.vttUrls);
                       console.log("[RECEIVER] listLanguages "+data.Languages);
-                      const urls = data.vttUrls || [];
+                      const vttUrls = data.vttUrls || [];
                       const languages = data.languages || [];
-
+                      let subsInfoList = null;
                       // On garde ça global pour servir à build mediaInfo.tracks
                       if(vttUrls != null){
-                          subsInfoList = urls.map((url, idx) => ({
+                          subsInfoList = vttUrls.map((url, idx) => ({
                           url,
                           lang: languages[idx]
                         }));
@@ -959,7 +959,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                       
 
                       console.log("[RECEIVER] subsInfoList", subsInfoList);
-                      loadVideoViaCAF(first, data.title, mimeType, durationMs,data.vttUrls,subsInfoList,currentAbortController.signal);
+                      loadVideoViaCAF(first, data.title, mimeType, durationMs,vttUrls,subsInfoList,currentAbortController.signal);
 
                   } else {
                       console.error("[RECEIVER] Valeur inattendue dans la liste: ", first);
