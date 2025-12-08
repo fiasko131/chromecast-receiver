@@ -953,7 +953,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                       if(vttUrls != null){
                           subsInfoList = vttUrls.map((url, idx) => ({
                           url,
-                          lang: languages[idx]
+                          language: languages[idx]
                         }));
                       }
                       
