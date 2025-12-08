@@ -621,6 +621,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       req.autoplay = true;
 
       displayingManualVideo = false;
+      playerManager.setActiveTrackIds([101]);
 
       try {
         await playerManager.load(req);
