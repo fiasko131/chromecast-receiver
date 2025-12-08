@@ -582,7 +582,7 @@ context.addCustomMessageListener(IMAGE_NAMESPACE, (event) => {
       mediaInfo.contentId = url;
       mediaInfo.contentType = contentType;
       if (transcoding)
-        mediaInfo.streamType = cast.framework.messages.StreamType.LIVE;
+        mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
       else mediaInfo.streamType = cast.framework.messages.StreamType.BUFFERED;
 
       if (durationSec > 0) {
