@@ -798,6 +798,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         // Ceci est la seule façon de forcer le lecteur à reconstruire son état interne 
         // et à adopter la nouvelle duration.
         playerManager.load(newLoadRequest);
+       
       
         showBottomUi();
         startVideoProgressTimer();
@@ -855,6 +856,9 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         newLoadRequest.autoplay = true; 
           
         playerManager.load(newLoadRequest);
+        const ttm = playerManager.getTextTracksManager();
+        ttm.setActiveByIds([101]);
+        currentSubTrackId = 101;
           
         console.log(`[RECEIVER] Reprise du LOAD forcée à ${seekTime}s.`);
         offsetSeekProgressif = seekTime;
@@ -878,8 +882,8 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
               break;
             }
           }*/
-          const ttm = playerManager.getTextTracksManager();
-          ttm.setActiveByIds([101]);
+          const ttma = playerManager.getTextTracksManager();
+          ttma.setActiveByIds([101]);
           currentSubTrackId = 101;
           showBottomUi()
 
