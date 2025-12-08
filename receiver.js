@@ -851,7 +851,8 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
             }
           }*/
           const ttm = playerManager.getTextTracksManager();
-          ttm.setActiveByIds([trackId]);
+          ttm.setActiveByIds([102]);
+          showBottomUi()
 
 
         break;
