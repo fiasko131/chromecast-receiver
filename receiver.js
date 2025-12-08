@@ -1642,8 +1642,8 @@ playerManager.addEventListener(
     if (!isAudioContent){
       if (state === "PLAYING"){
          // ICI tu peux activer une piste
-        const ttm = playerManager.getTextTracksManager();
-        ttm.setActiveByIds([101]);
+        //const ttm = playerManager.getTextTracksManager();
+        //ttm.setActiveByIds([101]);
         if (seekingInProgress) {
               seekingInProgress = false;
               showBottomUiTemporarily();
