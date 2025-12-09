@@ -1671,12 +1671,12 @@ playerManager.addEventListener(
     }
     if (!isAudioContent){
       if (state === "PLAYING"){
-          if (currentSubTrackId != 0 && startSubsAfterPlay){
+          /*if (currentSubTrackId != 0 && startSubsAfterPlay){
              startSubsAfterPlay = false;
               //ICI tu peux activer une piste
               const ttm = playerManager.getTextTracksManager();
               ttm.setActiveByIds([currentSubTrackId]);
-          }
+          }*/
          
         if (seekingInProgress) {
               seekingInProgress = false;
@@ -1688,6 +1688,24 @@ playerManager.addEventListener(
         stopVideoProgressTimer();
       }
     }
+
+function activateSubs() {
+  if (currentSubTrackId != 0){
+    const ttm = playerManager.getTextTracksManager();
+    if (ttm) ttm.setActiveByIds([currentSubTrackId]);
+  }
+   
+}
+
+playerManager.addEventListener(
+  cast.framework.events.EventType.PLAYER_LOAD_COMPLETE,
+  activateSubs
+);
+
+playerManager.addEventListener(
+  cast.framework.events.EventType.TRACKS_CHANGED,
+  activateSubs
+);
     
 
     console.log("[Video STATE] =>", status);
