@@ -833,7 +833,9 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           let subsInfoList = null;
           // On garde ça global pour servir à build mediaInfo.tracks
           if(vttUrls != null){
-              currentSubTrackId = data.trackId;
+              if(data.trackId != 0){
+                currentSubTrackId = data.trackId;
+              }
               subsInfoList = vttUrls.map((url, idx) => ({
                 url,
                 language: languages[idx]
