@@ -1477,7 +1477,7 @@ function handlePlayerState(state) {
       } else {
         if (transcoding && startSeekTanscoding){
           startSeekTanscoding = false;
-          toggleSpinner(fale);
+          toggleSpinner(false);
         }
         showBottomUiTemporarily();
         document.getElementById("player").style.display = "block";
