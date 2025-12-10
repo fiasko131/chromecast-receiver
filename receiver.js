@@ -809,6 +809,16 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
         showBottomUi();
         startVideoProgressTimer();
         break;
+        case "WAIT_SUB_SEEK":
+          if (transcoding) {
+              startSeekTanscoding = true;
+            }
+            try {
+              playerManager.pause();
+            } catch (err) {
+              console.warn("Erreur pause via CAF:", err);
+            }
+          break;
       case "SEEK_RESTART_READY":
           stopVideoProgressTimer();
           const seekTime = data.seekTime;
