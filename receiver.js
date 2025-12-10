@@ -29,6 +29,7 @@ let audioIsPlaying = false;
 let videoProgressTimer = null;
 let seekingInProgress = false;
 let transcoding = false;
+let startSeekTanscoding = false;
 let seekBarDuration = 0;
 let offsetSeekProgressif = 0;
 let startSubsAfterPlay = false;
@@ -745,6 +746,9 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           if (playerManager && typeof data.position === "number") {
             // ⚡ seek en secondes
             console.log("[RECEIVER]"+data.position/1000);
+            if (transcoding) {
+              startSeekTanscoding = true;
+            }
             try {
               playerManager.pause();
             } catch (err) {
@@ -1191,7 +1195,7 @@ function displayFirstImage(url) {
 
 function handleSeekTranscoding(seekTime) {
   
-    
+    toggleSpinner(true);
     console.log(`[RECEIVER] CUSTOM_SEEK intercepté. Nouveau seek demandé: ${seekTime}s`);
     
     // 1. Envoyer un message de confirmation à Android pour lancer l'arrêt/redémarrage de FFmpeg.
@@ -1420,6 +1424,27 @@ function showBottomUi() {
   bottomUI.classList.add("show");
 }
 
+/**
+ * Affiche ou masque l'anneau de progression (spinner) et contrôle son animation.
+ * @param {boolean} show - True pour afficher et démarrer l'animation, false pour masquer.
+ */
+function toggleSpinner(show) {
+    const spinnerContainer = document.getElementById('loading-spinner-container');
+
+    if (!spinnerContainer) {
+        console.error("L'élément 'loading-spinner-container' est introuvable.");
+        return;
+    }
+
+    if (show) {
+        // Rendre visible et démarrer l'animation (via display: flex défini dans le CSS)
+        spinnerContainer.style.display = 'flex';
+    } else {
+        // Rendre invisible et stopper l'animation (le navigateur arrête de rendre ce qui est 'none')
+        spinnerContainer.style.display = 'none';
+    }
+}
+
 // ==================== PLAYER STATE ====================
 function handlePlayerState(state) {
   console.log("[RECEIVER] handlePlayerState "+state);
@@ -1450,6 +1475,10 @@ function handlePlayerState(state) {
         document.getElementById("player").style.display = "none";
         if (audioPauseIcon) audioPauseIcon.style.display = "none";
       } else {
+        if (transcoding && startSeekTanscoding){
+          startSeekTanscoding = false;
+          toggleSpinner(fale);
+        }
         showBottomUiTemporarily();
         document.getElementById("player").style.display = "block";
         audioUI.style.display = "none";
@@ -1462,8 +1491,11 @@ function handlePlayerState(state) {
         audioUI.style.display = "flex";
         if (audioPauseIcon) audioPauseIcon.style.display = "block";
       } else {
-        if (bottomUI) bottomUI.classList.add("show");
-        if (pauseIcon) pauseIcon.style.display = "block";
+        if (!startSeekTanscoding){
+          if (bottomUI) bottomUI.classList.add("show");
+          if (pauseIcon) pauseIcon.style.display = "block";
+        }
+        
       }
       break;
     case cast.framework.ui.State.IDLE:

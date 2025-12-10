@@ -345,7 +345,51 @@ body.playing #player {
 #progress-big-text.show {
   opacity: 1;
 }
+/* ======================================= */
+/* ====== PROGRESS RING (SPINNER) ====== */
+/* ======================================= */
 
+/* Conteneur Plein Écran pour centrage (Doit être au-dessus du Player) */
+#loading-spinner-container {
+    /* Fixé à la fenêtre pour être toujours visible et centré */
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    /* Centrage parfait au milieu de l'écran */
+    display: flex;
+    justify-content: center; /* Centrage horizontal */
+    align-items: center;    /* Centrage vertical */
+    
+    /* Assurez-vous qu'il est au-dessus du lecteur vidéo */
+    z-index: 1000; 
+    
+    /* (Vous pouvez ajouter un fond semi-transparent si vous voulez, ex: background-color: rgba(0, 0, 0, 0.5); ) */
+}
+
+/* L'Anneau lui-même */
+.progress-ring.indeterminate {
+    width: 70px; /* Taille légèrement augmentée pour un TV */
+    height: 70px;
+    border: 8px solid rgba(255, 255, 255, 0.3); /* Bordure de fond */
+    border-top-color: #ffffff; /* Bordure active (Blanc par défaut) */
+    border-radius: 50%;
+    
+    /* Démarrer l'animation */
+    animation: spin 1s linear infinite;
+}
+
+/* Keyframes de rotation (à ajouter à votre CSS) */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
 
 
 
