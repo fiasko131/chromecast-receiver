@@ -823,12 +823,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
       case "SEEK_RESTART_READY":
           stopVideoProgressTimer();
           const seekTime = data.seekTime;
-          const trackId = data.trackId;
-          if (trackId != null){
-            if (trackId != 0){
-              currentSubTrackId = trackId;
-            }
-          }
+          
           newMediaInfo = playerManager.getMediaInformation();
           // On récupère les sous titres si existants
           console.log("[RECEIVER] vttUrls "+data.vttUrls);
@@ -838,6 +833,7 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           let subsInfoList = null;
           // On garde ça global pour servir à build mediaInfo.tracks
           if(vttUrls != null){
+              currentSubTrackId = data.trackId;
               subsInfoList = vttUrls.map((url, idx) => ({
                 url,
                 language: languages[idx]
