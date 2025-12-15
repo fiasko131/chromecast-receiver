@@ -746,15 +746,15 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           if (playerManager && typeof data.position === "number") {
             // ⚡ seek en secondes
             console.log("[RECEIVER]"+data.position/1000);
-            if (transcoding) {
-              startSeekTanscoding = true;
-            }
-            try {
-              playerManager.pause();
-            } catch (err) {
-              console.warn("Erreur pause via CAF:", err);
-            }
+            
+            
             if (transcoding){
+              startSeekTanscoding = true;
+              try {
+                playerManager.pause();
+              } catch (err) {
+                console.warn("Erreur pause via CAF:", err);
+              }
               console.log("[RECEIVER] seekTranscoding");
               handleSeekTranscoding(data.position/1000)
             }else{
@@ -1481,6 +1481,9 @@ function handlePlayerState(state) {
   if (imageUI) imageUI.style.display = "none";
 
   switch(state) {
+    case cast.framework.ui.State.BUFFERING:
+      toggleSpinner(true);
+      break;
     case cast.framework.ui.State.PLAYING:
       displayingManualImage = false;
       document.body.classList.add("playing");
@@ -1490,9 +1493,10 @@ function handlePlayerState(state) {
         document.getElementById("player").style.display = "none";
         if (audioPauseIcon) audioPauseIcon.style.display = "none";
       } else {
+        toggleSpinner(false);
         if (transcoding && startSeekTanscoding){
           startSeekTanscoding = false;
-          toggleSpinner(false);
+          //toggleSpinner(false);
         }
         showBottomUiTemporarily();
         document.getElementById("player").style.display = "block";
@@ -1519,6 +1523,7 @@ function handlePlayerState(state) {
         console.log("[RECEIVER] Ignorer IDLE pour image manuelle");
         break;
       }
+      toggleSpinner(false);
       document.body.classList.remove("playing");
       if (bottomUI) bottomUI.classList.remove("show");
       if (pauseIcon) pauseIcon.style.display = "none";
