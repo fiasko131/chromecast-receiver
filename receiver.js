@@ -1016,16 +1016,16 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
       case 'SET_INDEX':
         currentSubTrackId = 0;
         if (typeof data.index === 'number') {
-          if (data.urls != null && Array.isArray(data.urls)) {
+          /*if (data.urls != null && Array.isArray(data.urls)) {
             // on a recu une mise à jour de la liste d'url
             imageList = data.urls.slice(); // clone
-          }
+          }*/
           
           
 
           const idxSet = Math.min(Math.max(0, data.index), imageList.length - 1);
           currentImageIndex = idxSet;
-          const urlToShow = imageList[idxSet];
+          let urlToShow = imageList[idxSet];
           try {
             if (playerManager){
                 playerManager.stop();
@@ -1035,8 +1035,11 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           }
 
           if (isVideoUrl(urlToShow)) {
+            if (data.transcodeUrl != null){
+              urlToShow = data.transcodeUrl;
+              transcoding = true;
+            }
             offsetSeekProgressif = 0;
-            if (urlToShow.includes("progressive.mp4")) transcoding = true;
             console.log("[RECEIVER] transcoding "+transcoding);
             if (data.seekBarDuration != null) {
                 seekBarDuration = data.seekBarDuration/1000;
@@ -1069,9 +1072,20 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                currentAbortController.abort();
             }
             currentAbortController = new AbortController();
+            const vttUrls = data.vttUrls || [];
+            const languages = data.languages || [];
+            let subsInfoList = null;
+            // On garde ça global pour servir à build mediaInfo.tracks
+            if(vttUrls != null){
+                subsInfoList = vttUrls.map((url, idx) => ({
+                url,
+                language: languages[idx]
+              }));
+            }
 
             // Lancer la nouvelle vidéo
-            loadVideoViaCAF(urlToShow, data.title, mimeType, durationMs, currentAbortController.signal);
+            loadVideoViaCAF(urlToShow, data.title, mimeType, durationMs,vttUrls,subsInfoList,currentAbortController.signal);
+            //loadVideoViaCAF(urlToShow, data.title, mimeType, durationMs, currentAbortController.signal);
           } 
           else if (isAudioUrl(urlToShow)) {
             showAudioAtIndex(idxSet);
