@@ -947,6 +947,9 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                   displayFirstImage(first);
 
               } else if (isVideoUrl(first)) {
+                if (data.transcodeUrl != null){
+                  first = data.transcodeUrl;
+                }
                   
                   console.log("[RECEIVER] Première vidéo → passage en mode CAF");
                   console.log("[RECEIVER] durationMs "+data.durationms);
