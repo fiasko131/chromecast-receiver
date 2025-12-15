@@ -940,16 +940,16 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
           // votre logique existante pour afficher le premier élément
           // ============================================================
           if (!firstImageShown && imageList.length > 0) {
-              const first = imageList[currentImageIndex];
+              let first = imageList[currentImageIndex];
 
               if (isImageUrl(first)) {
                   lastImageIndex = startIndex;
                   displayFirstImage(first);
 
               } else if (isVideoUrl(first)) {
-                if (data.transcodeUrl != null){
-                  first = data.transcodeUrl;
-                }
+                  if (data.transcodeUrl != null){
+                    first = data.transcodeUrl;
+                  }
                   
                   console.log("[RECEIVER] Première vidéo → passage en mode CAF");
                   console.log("[RECEIVER] durationMs "+data.durationms);
@@ -957,65 +957,38 @@ async function loadVideoViaCAFQueue(segmentList, startIndex) {
                   let isSegmentJson = false;
                   let segmentData = null;
 
-                  if (typeof first === "string" && first.trim().startsWith("{")) {
-                      try {
-                          const parsed = JSON.parse(first);
-
-                          if (parsed.type === "init_playlist" && Array.isArray(parsed.segments)) {
-                              isSegmentJson = true;
-                              segmentData = parsed;
-                              console.log("[RECEIVER] JSON init_playlist détecté:", parsed);
-                          }
-                      } catch(e) {
-                          console.warn("[RECEIVER] String ressemble à du JSON mais invalide :", e);
-                      }
-                  }
-                  if (isSegmentJson) {
-                      console.log("[RECEIVER] Lecture via segmentation CAF Queue");
-
-                      /*loadVideoViaCAFQueue(
-                          segmentData.segments,
-                          segmentData.segmentDuration,
-                          segmentData.playFromSegmentIndex
-                      );*/
-
-                  } else if (first.startsWith("http")) {
-                      if (first.includes("progressive.mp4")) transcoding = true;
-                      console.log("[RECEIVER] transcoding "+transcoding);
-                      if (data.seekBarDuration != null) {
+                  if (first.includes("progressive.mp4")) transcoding = true;
+                  console.log("[RECEIVER] transcoding "+transcoding);
+                  if (data.seekBarDuration != null) {
                         seekBarDuration = data.seekBarDuration/1000;
-                      }
-                      console.log("[RECEIVER] seekBarDuration "+seekBarDuration);
-                      // URL classique → lecture CAF standard
-                      // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
-                      const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
-                      const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
-                      console.log("[RECEIVER] durationMs "+durationMs);
-                      //castLoadVideoCAF(first,"video",mimeType,0);
-                      if (currentAbortController) {
-                        currentAbortController.abort();
-                      }
-                      currentAbortController = new AbortController();
-                      console.log("[RECEIVER] vttUrls "+data.vttUrls);
-                      console.log("[RECEIVER] listLanguages "+data.languages);
-                      const vttUrls = data.vttUrls || [];
-                      const languages = data.languages || [];
-                      let subsInfoList = null;
-                      // On garde ça global pour servir à build mediaInfo.tracks
-                      if(vttUrls != null){
-                          subsInfoList = vttUrls.map((url, idx) => ({
-                          url,
-                          language: languages[idx]
-                        }));
-                      }
+                  }
+                  console.log("[RECEIVER] seekBarDuration "+seekBarDuration);
+                  // URL classique → lecture CAF standard
+                  // 🔧 AJOUT VIDEO CAF : remplacer castLoadVideo par CAF
+                  const mimeType = typeof data.mimeType === "string" ? data.mimeType : "video/mp4";
+                  const durationMs = typeof data.durationms === "number" ? data.durationms : 0;
+                  console.log("[RECEIVER] durationMs "+durationMs);
+                  //castLoadVideoCAF(first,"video",mimeType,0);
+                  if (currentAbortController) {
+                      currentAbortController.abort();
+                  }
+                  currentAbortController = new AbortController();
+                  console.log("[RECEIVER] vttUrls "+data.vttUrls);
+                  console.log("[RECEIVER] listLanguages "+data.languages);
+                  const vttUrls = data.vttUrls || [];
+                  const languages = data.languages || [];
+                  let subsInfoList = null;
+                  // On garde ça global pour servir à build mediaInfo.tracks
+                  if(vttUrls != null){
+                      subsInfoList = vttUrls.map((url, idx) => ({
+                      url,
+                      language: languages[idx]
+                    }));
+                  }
                       
 
-                      console.log("[RECEIVER] subsInfoList", subsInfoList);
-                      loadVideoViaCAF(first, data.title, mimeType, durationMs,vttUrls,subsInfoList,currentAbortController.signal);
-
-                  } else {
-                      console.error("[RECEIVER] Valeur inattendue dans la liste: ", first);
-                  }
+                  console.log("[RECEIVER] subsInfoList", subsInfoList);
+                  loadVideoViaCAF(first, data.title, mimeType, durationMs,vttUrls,subsInfoList,currentAbortController.signal);    
                   pendingVideoUrl = first;
                   firstImageShown = true;
 
