@@ -1,6 +1,6 @@
 // ==================== INIT ====================
 cast.framework.CastReceiverContext.getInstance().setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
-
+const castDebugLogger = cast.debug.CastDebugLogger.getInstance();
 // Récupère le contexte et le player
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
@@ -1312,6 +1312,7 @@ playerManager.setMessageInterceptor(
         // Initialisation immédiate de l'ID pour le premier morceau
         currentContentId = loadRequest.media.contentId;
     }
+    castDebugLogger.info("castAudio", "loadRequest "+currentContentId);
 
     // ============================================================
     // 5️⃣ METADATA (titre, artiste, miniature…)
@@ -1328,6 +1329,7 @@ playerManager.setMessageInterceptor(
     const audioThumbnail = document.getElementById("audio-thumbnail");
 
     if (meta) {
+      castDebugLogger.info("castAudio", "loadRequest meta "+meta.title);
       const titleText = meta.title || "In Progress...";
 
       if (videoTitle) videoTitle.textContent = titleText;
@@ -1360,6 +1362,7 @@ playerManager.setMessageInterceptor(
 
 function updateMetadataUIAudio(metadata, contentType) {
     if (!metadata) return;
+    castDebugLogger.info("castAudio", "updateUiaudio ");
 
     const isAudio = contentType?.startsWith("audio/");
     const titleText = metadata.title || "In Progress...";
@@ -1647,6 +1650,7 @@ playerManager.addEventListener(
             const isReallyPlaying = activeItem && activeItem.media && activeItem.media.contentId === newContentId;
 
             if (newContentId && newContentId !== currentContentId && isReallyPlaying) {
+                castDebugLogger.info("castAudio", "transition "+currentContentId+" "+newContentId);
                 console.log("[RECEIVER] Transition de morceau réelle détectée :", newContentId);
                 
                 // Mise à jour de la référence pour bloquer les futurs appels inutiles
@@ -1883,6 +1887,12 @@ document.addEventListener("click", () => {
 context.setInactivityTimeout(3600);
 
 context.loggerLevel = cast.framework.LoggerLevel.ERROR;
+context.addEventListener(cast.framework.system.EventType.READY, () => {
+  if (!castDebugLogger.debugOverlayElement_) {
+      // Enable debug logger and show a 'DEBUG MODE' overlay at top left corner.
+      castDebugLogger.setEnabled(true);
+  }
+});
 
 
 
