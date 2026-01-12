@@ -1338,8 +1338,8 @@ playerManager.setMessageInterceptor(
       if (videoTitleSmall) videoTitleSmall.textContent = titleText;
 
       if (!isPreload && isAudioContent){
-        castDebugLogger.error("castAudio", "updateUI called "+meta.title);
-        updateMetadataUIAudio(meta,ct);
+        
+        //updateMetadataUIAudio(meta,ct);
       }
       //if (audioTitle) audioTitle.textContent = titleText;
 
@@ -1491,6 +1491,19 @@ function toggleSpinner(show) {
 // ==================== PLAYER STATE ====================
 function handlePlayerState(state) {
   console.log("[RECEIVER] handlePlayerState "+state);
+  // Cet événement est parfait car il est synchronisé avec l'UI réelle
+  if (isAudioContent){
+    const mediaStatus = playerManager.getMediaStatus();
+    if (mediaStatus && mediaStatus.media) {
+      const newId = mediaStatus.media.contentId;
+      if (newId !== currentContentId) {
+          castDebugLogger.error("castAudio", "updateUI called "+meta.title);
+          currentContentId = newId;
+          updateMetadataUIAudio(mediaStatus.media.metadata, mediaStatus.media.contentType);
+      }
+    }  
+  }
+    
   if (state === lastPlayerState) return;
   lastPlayerState = state;
 
@@ -1645,7 +1658,7 @@ playerManager.addEventListener(
         
 
         // 1️⃣ DÉTECTION DU CHANGEMENT DE MORCEAU (LOGIQUE DE QUEUE)
-        if (status.media) {
+        /*if (status.media) {
             castDebugLogger.info("castAudio", "listener "+status.media.metadata.title);
             const newContentId = status.media.contentId;
             castDebugLogger.info("castAudio", "transition? "+currentContentId+" "+newContentId);
@@ -1674,7 +1687,7 @@ playerManager.addEventListener(
                 // Mise à jour visuelle (Titre, Artiste, Image)
                 updateMetadataUIAudio(status.media.metadata, status.media.contentType);
             }
-        }
+        }*/
 
         // 2️⃣ GESTION DE LA PROGRESSION ET DU TEMPS (VOTRE LOGIQUE)
         const newTime = status.currentTime;
