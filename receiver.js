@@ -1314,6 +1314,7 @@ playerManager.setMessageInterceptor(
     }
     castDebugLogger.info("castAudio", "loadRequest "+currentContentId);
     const isPreload = loadRequest.preloading === true;
+    castDebugLogger.info("castAudio", "preload "+isPreload);
 
     // ============================================================
     // 5️⃣ METADATA (titre, artiste, miniature…)
@@ -1640,6 +1641,7 @@ playerManager.addEventListener(
         if (!isAudioContent) return;
         const status = event.mediaStatus;
         if (!status) return;
+        castDebugLogger.info("castAudio", "listener "+status);
 
         // 1️⃣ DÉTECTION DU CHANGEMENT DE MORCEAU (LOGIQUE DE QUEUE)
         if (status.media) {
