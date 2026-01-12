@@ -1559,7 +1559,7 @@ function handlePlayerState(state) {
       if (bottomUI) bottomUI.classList.remove("show");
       if (pauseIcon) pauseIcon.style.display = "none";
       if (audioPauseIcon) audioPauseIcon.style.display = "none";
-      audioUI.style.display = "none";
+      //audioUI.style.display = "none";
       if (document.getElementById("player")) document.getElementById("player").style.display = "none";
       break;
   }
