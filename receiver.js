@@ -1313,6 +1313,7 @@ playerManager.setMessageInterceptor(
         currentContentId = loadRequest.media.contentId;
     }
     castDebugLogger.info("castAudio", "loadRequest "+currentContentId);
+    const isPreload = loadRequest.preloading === true;
 
     // ============================================================
     // 5️⃣ METADATA (titre, artiste, miniature…)
@@ -1334,10 +1335,14 @@ playerManager.setMessageInterceptor(
 
       if (videoTitle) videoTitle.textContent = titleText;
       if (videoTitleSmall) videoTitleSmall.textContent = titleText;
-      if (audioTitle) audioTitle.textContent = titleText;
 
-      if (audioAlbum) audioAlbum.textContent = "Album: " + (meta.albumName || "unknown");
-      if (audioArtist) audioArtist.textContent = "Artist: " + (meta.artist || "unknown");
+      if (!isPreload && isAudioContent){
+        updateMetadataUIAudio(meta,ct);
+      }
+      //if (audioTitle) audioTitle.textContent = titleText;
+
+      //if (audioAlbum) audioAlbum.textContent = "Album: " + (meta.albumName || "unknown");
+      //if (audioArtist) audioArtist.textContent = "Artist: " + (meta.artist || "unknown");
       let imgUrl = meta.images?.[0]?.url || "assets/placeholder.png"; 
       if (thumbUrl == null) { // si thumbUrl custom n'est pas présente
         
@@ -1345,7 +1350,7 @@ playerManager.setMessageInterceptor(
         if (videoThumbnailSmall) videoThumbnailSmall.src = imgUrl;
       }
       
-      if (audioThumbnail) audioThumbnail.src = imgUrl;
+      //if (audioThumbnail) audioThumbnail.src = imgUrl;
     }
 
     // ============================================================
