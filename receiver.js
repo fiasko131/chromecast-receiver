@@ -1624,6 +1624,7 @@ function stopAudioTimer() {
 );*/
 
 
+
 // --- Listener audio ---
 playerManager.addEventListener(
     cast.framework.events.EventType.MEDIA_STATUS,
@@ -1636,11 +1637,19 @@ playerManager.addEventListener(
         if (status.media) {
             const newContentId = status.media.contentId;
 
-            // Si l'ID a changé, c'est que la Queue est passée au suivant
-            if (newContentId && newContentId !== currentContentId) {
-                console.log("[RECEIVER] Transition Queue détectée :", newContentId);
+            // On récupère l'item qui est réellement en train de jouer sur le "plateau"
+            const queueManager = playerManager.getQueueManager();
+            const activeItem = queueManager ? queueManager.getCurrentItem() : null;
+            
+            // On ne change l'UI que si :
+            // - L'ID est différent de celui affiché (currentContentId)
+            // - ET que cet ID correspond bien à l'item ACTIF (pas celui en préchargement)
+            const isReallyPlaying = activeItem && activeItem.media && activeItem.media.contentId === newContentId;
+
+            if (newContentId && newContentId !== currentContentId && isReallyPlaying) {
+                console.log("[RECEIVER] Transition de morceau réelle détectée :", newContentId);
                 
-                // Mise à jour de la référence
+                // Mise à jour de la référence pour bloquer les futurs appels inutiles
                 currentContentId = newContentId;
 
                 // Mise à jour de la durée pour le nouveau morceau
@@ -1648,40 +1657,35 @@ playerManager.addEventListener(
                     mediaDuration = status.media.duration;
                 }
 
-                // Mise à jour des métadonnées (Titre, Artiste, Image)
-                // On s'assure que isAudioContent est à jour pour l'UI
-                
+                // Mise à jour visuelle (Titre, Artiste, Image)
                 updateMetadataUIAudio(status.media.metadata, status.media.contentType);
             }
         }
 
         // 2️⃣ GESTION DE LA PROGRESSION ET DU TEMPS (VOTRE LOGIQUE)
-        if (isAudioContent) {
-            const newTime = status.currentTime;
+        const newTime = status.currentTime;
+        
+        // Mise à jour du temps actuel (Seek ou lecture normale)
+        if (typeof newTime === "number" && !isNaN(newTime)) {
+            audioCurrentTimeSec = newTime;
             
-            // Mise à jour du temps actuel (Seek ou lecture normale)
-            if (typeof newTime === "number" && !isNaN(newTime)) {
-                audioCurrentTimeSec = newTime;
-                
-                // On met aussi à jour la durée si elle est présente dans le statut
-                if (status.media && status.media.duration) {
-                    mediaDuration = status.media.duration;
-                }
-                
-                updateAudioProgressUI(); 
-                // console.log(`[Audio PROGRESS] ${audioCurrentTimeSec}s / ${mediaDuration}s`);
+            // Mise à jour de sécurité de la durée si elle change en cours de route
+            if (status.media && status.media.duration) {
+                mediaDuration = status.media.duration;
             }
-
-            // Gestion de l'état de lecture et du Timer
-            const playingNow = (status.playerState === cast.framework.messages.PlayerState.PLAYING);
             
-            if (playingNow !== audioIsPlaying) {
-                audioIsPlaying = playingNow;
-                if (audioIsPlaying) {
-                    startAudioTimer();
-                } else {
-                    stopAudioTimer();
-                }
+            updateAudioProgressUI(); 
+        }
+
+        // Gestion de l'état de lecture et du Timer
+        const playingNow = (status.playerState === cast.framework.messages.PlayerState.PLAYING);
+        
+        if (playingNow !== audioIsPlaying) {
+            audioIsPlaying = playingNow;
+            if (audioIsPlaying) {
+                startAudioTimer();
+            } else {
+                stopAudioTimer();
             }
         }
     }
