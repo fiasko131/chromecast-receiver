@@ -1281,40 +1281,39 @@ playerManager.setMessageInterceptor(
       pendingVideoUrl = null;
     }
 
-    // ============================================================
-    // 3️⃣ RÉCUPÉRATION DE LA DURÉE
-    // ============================================================
-    mediaDuration = 0;
-
-    if (loadRequest.media.customData?.durationMs > 0) {
-      mediaDuration = loadRequest.media.customData.durationMs / 1000;
-      console.log("[DURATION] depuis customData.durationMs =", mediaDuration);
-    }
-    else if (typeof loadRequest.media.duration === "number" && loadRequest.media.duration > 0) {
-      mediaDuration = loadRequest.media.duration;
-      console.log("[DURATION] depuis media.duration =", mediaDuration);
-    }
-    else if (typeof loadRequest.media.streamDuration === "number" && loadRequest.media.streamDuration > 0) {
-      mediaDuration = loadRequest.media.streamDuration;
-      console.log("[DURATION] depuis media.streamDuration =", mediaDuration);
-    }
-    else {
-      console.log("[DURATION] aucune fournie → CAF devra la détecter");
-    }
+    
 
     // ============================================================
     // 4️⃣ TYPE AUDIO OU VIDEO
     // ============================================================
     const ct = loadRequest.media?.contentType || "";
     isAudioContent = ct.startsWith("audio/");
-    console.log("[TYPE] contentType =", ct, "isAudioContent =", isAudioContent);
-    if (isAudioContent){
-        // Initialisation immédiate de l'ID pour le premier morceau
-        currentContentId = loadRequest.media.contentId;
+    
+    if (!isAudioContent){
+      // pour l'audio à cause de queue la durée est récupérée dans le listener de status
+      // ============================================================
+      // 3️⃣ RÉCUPÉRATION DE LA DURÉE
+      // ============================================================
+      mediaDuration = 0;
+
+      if (loadRequest.media.customData?.durationMs > 0) {
+        mediaDuration = loadRequest.media.customData.durationMs / 1000;
+        console.log("[DURATION] depuis customData.durationMs =", mediaDuration);
+      }
+      else if (typeof loadRequest.media.duration === "number" && loadRequest.media.duration > 0) {
+        mediaDuration = loadRequest.media.duration;
+        console.log("[DURATION] depuis media.duration =", mediaDuration);
+      }
+      else if (typeof loadRequest.media.streamDuration === "number" && loadRequest.media.streamDuration > 0) {
+        mediaDuration = loadRequest.media.streamDuration;
+        console.log("[DURATION] depuis media.streamDuration =", mediaDuration);
+      }
+      else {
+        console.log("[DURATION] aucune fournie → CAF devra la détecter");
+      }
     }
-    castDebugLogger.info("castAudio", "loadRequest "+currentContentId);
-    const isPreload = loadRequest.preloading === true;
-    castDebugLogger.info("castAudio", "preload "+isPreload);
+    
+    console.log("[TYPE] contentType =", ct, "isAudioContent =", isAudioContent)
 
     // ============================================================
     // 5️⃣ METADATA (titre, artiste, miniature…)
@@ -1332,24 +1331,24 @@ playerManager.setMessageInterceptor(
 
     if (meta) {
       castDebugLogger.info("castAudio", "loadRequest meta "+meta.title);
-      const titleText = meta.title || "In Progress...";
+      
 
-      if (videoTitle) videoTitle.textContent = titleText;
-      if (videoTitleSmall) videoTitleSmall.textContent = titleText;
-
-      if (!isPreload && isAudioContent){
-        
-        //updateMetadataUIAudio(meta,ct);
-      }
+      
       //if (audioTitle) audioTitle.textContent = titleText;
 
       //if (audioAlbum) audioAlbum.textContent = "Album: " + (meta.albumName || "unknown");
       //if (audioArtist) audioArtist.textContent = "Artist: " + (meta.artist || "unknown");
       let imgUrl = meta.images?.[0]?.url || "assets/placeholder.png"; 
       if (thumbUrl == null) { // si thumbUrl custom n'est pas présente
+        if (!isAudioContent){
+          const titleText = meta.title || "In Progress...";
+
+          if (videoTitle) videoTitle.textContent = titleText;
+          if (videoTitleSmall) videoTitleSmall.textContent = titleText;
+          if (videoThumbnail) videoThumbnail.src = imgUrl;
+          if (videoThumbnailSmall) videoThumbnailSmall.src = imgUrl;
+        }
         
-        if (videoThumbnail) videoThumbnail.src = imgUrl;
-        if (videoThumbnailSmall) videoThumbnailSmall.src = imgUrl;
       }
       
       //if (audioThumbnail) audioThumbnail.src = imgUrl;
@@ -1377,6 +1376,8 @@ function updateMetadataUIAudio(metadata, contentType) {
 
     // Mise à jour des éléments (votre code existant)
     if (isAudio) {
+        if (document.getElementById("video-thumbnail")) 
+            document.getElementById("video-thumbnail").src; 
         if (document.getElementById("track-title")) 
             document.getElementById("track-title").textContent = metadata.title || "Unknown Title"; 
         if (document.getElementById("track-album")) 
