@@ -1641,11 +1641,13 @@ playerManager.addEventListener(
         if (!isAudioContent) return;
         const status = event.mediaStatus;
         if (!status) return;
-        castDebugLogger.info("castAudio", "listener "+status);
+        
 
         // 1️⃣ DÉTECTION DU CHANGEMENT DE MORCEAU (LOGIQUE DE QUEUE)
         if (status.media) {
+            castDebugLogger.info("castAudio", "listener "+status.media);
             const newContentId = status.media.contentId;
+            castDebugLogger.info("castAudio", "transition "+currentContentId+" "+newContentId);
 
             // On récupère l'item qui est réellement en train de jouer sur le "plateau"
             const queueManager = playerManager.getQueueManager();
@@ -1655,9 +1657,9 @@ playerManager.addEventListener(
             // - L'ID est différent de celui affiché (currentContentId)
             // - ET que cet ID correspond bien à l'item ACTIF (pas celui en préchargement)
             const isReallyPlaying = activeItem && activeItem.media && activeItem.media.contentId === newContentId;
-
+            castDebugLogger.info("castAudio", "isReallyPlaying "+isReallyPlaying);
             if (newContentId && newContentId !== currentContentId && isReallyPlaying) {
-                castDebugLogger.info("castAudio", "transition "+currentContentId+" "+newContentId);
+                castDebugLogger.info("castAudio", "trzansition détectée !!!!!!! "+newContentId);
                 console.log("[RECEIVER] Transition de morceau réelle détectée :", newContentId);
                 
                 // Mise à jour de la référence pour bloquer les futurs appels inutiles
