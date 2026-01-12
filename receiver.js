@@ -1651,7 +1651,7 @@ playerManager.addEventListener(
                 // Mise à jour des métadonnées (Titre, Artiste, Image)
                 // On s'assure que isAudioContent est à jour pour l'UI
                 
-                updateMetadataUI(status.media.metadata, status.media.contentType);
+                updateMetadataUIAudio(status.media.metadata, status.media.contentType);
             }
         }
 
