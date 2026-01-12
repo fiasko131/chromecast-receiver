@@ -1491,22 +1491,7 @@ function toggleSpinner(show) {
 // ==================== PLAYER STATE ====================
 function handlePlayerState(state) {
   console.log("[RECEIVER] handlePlayerState "+state);
-  // Cet événement est parfait car il est synchronisé avec l'UI réelle
-  if (isAudioContent){
-    const mediaStatus = playerManager.getMediaStatus();
-    castDebugLogger.error("castAudio", "mediaStatus "+mediaStatus);
-    if (mediaStatus && mediaStatus.media) {
-      
-      const newId = mediaStatus.media.contentId;
-      castDebugLogger.error("castAudio", "newId "+newId);
-      castDebugLogger.error("castAudio", "title "+mediaStatus.media.metadata.title);
-      if (newId !== currentContentId) {
-          castDebugLogger.error("castAudio", "updateUI called "+meta.title);
-          currentContentId = newId;
-          updateMetadataUIAudio(mediaStatus.media.metadata, mediaStatus.media.contentType);
-      }
-    }  
-  }
+  
     
   if (state === lastPlayerState) return;
   lastPlayerState = state;
@@ -1653,62 +1638,53 @@ function stopAudioTimer() {
 
 
 // --- Listener audio ---
+// --- Initialisation (à placer en dehors du listener, en haut de votre script) ---
+let currentItemIdInQueue = null; 
+
+// ==================== LISTENER MEDIA_STATUS ====================
 playerManager.addEventListener(
     cast.framework.events.EventType.MEDIA_STATUS,
     (event) => {
-        if (!isAudioContent) return;
+        // Sécurité : on ne traite que l'audio
+        if (!isAudioContent || !event.mediaStatus) return;
+
         const status = event.mediaStatus;
-        if (!status) return;
-        
 
-        // 1️⃣ DÉTECTION DU CHANGEMENT DE MORCEAU (LOGIQUE DE QUEUE)
-        /*if (status.media) {
-            castDebugLogger.info("castAudio", "listener "+status.media.metadata.title);
-            const newContentId = status.media.contentId;
-            castDebugLogger.info("castAudio", "transition? "+currentContentId+" "+newContentId);
-
-            // On récupère l'item qui est réellement en train de jouer sur le "plateau"
-            const queueManager = playerManager.getQueueManager();
-            const activeItem = queueManager ? queueManager.getCurrentItem() : null;
+        // 1️⃣ GESTION DE LA SYNCHRONISATION UI (Queue & Preload)
+        // L'identifiant 'currentItemId' change uniquement à la transition réelle
+        if (status.currentItemId !== currentItemIdInQueue) {
             
-            // On ne change l'UI que si :
-            // - L'ID est différent de celui affiché (currentContentId)
-            // - ET que cet ID correspond bien à l'item ACTIF (pas celui en préchargement)
-            const isReallyPlaying = activeItem && activeItem.media && activeItem.media.contentId === newContentId;
-            castDebugLogger.info("castAudio", "isReallyPlaying "+isReallyPlaying);
-            if (newContentId && newContentId !== currentContentId && isReallyPlaying) {
-                castDebugLogger.error("castAudio", "transition détectée !!!!!!! "+newContentId);
-                //console.error("[RECEIVER] Transition de morceau réelle détectée :", newContentId);
+            // On vérifie que les métadonnées sont présentes
+            if (status.media && status.media.metadata) {
+                console.log(`[SYNC] Transition vers l'item : ${status.currentItemId}`);
                 
-                // Mise à jour de la référence pour bloquer les futurs appels inutiles
-                currentContentId = newContentId;
-
-                // Mise à jour de la durée pour le nouveau morceau
+                // On met à jour le verrou
+                currentItemIdInQueue = status.currentItemId;
+                
+                // On met à jour la durée pour votre barre de progression
                 if (status.media.duration && status.media.duration > 0) {
                     mediaDuration = status.media.duration;
                 }
 
-                // Mise à jour visuelle (Titre, Artiste, Image)
+                // MISE À JOUR DE L'AFFICHAGE
+                // On appelle votre fonction avec les métadonnées de l'item courant
                 updateMetadataUIAudio(status.media.metadata, status.media.contentType);
             }
-        }*/
+        }
 
-        // 2️⃣ GESTION DE LA PROGRESSION ET DU TEMPS (VOTRE LOGIQUE)
+        // 2️⃣ GESTION DE LA PROGRESSION (CurrentTime)
         const newTime = status.currentTime;
-        
-        // Mise à jour du temps actuel (Seek ou lecture normale)
         if (typeof newTime === "number" && !isNaN(newTime)) {
             audioCurrentTimeSec = newTime;
             
-            // Mise à jour de sécurité de la durée si elle change en cours de route
-            if (status.media && status.media.duration) {
-                mediaDuration = status.media.duration;
-            }
-            
+            // Mise à jour de votre Seekbar/UI
             updateAudioProgressUI(); 
+            
+            // Optionnel : logs de debug
+            // console.log(`[Audio PROGRESS] ${audioCurrentTimeSec}s / ${mediaDuration}s`);
         }
 
-        // Gestion de l'état de lecture et du Timer
+        // 3️⃣ GESTION DE L'ÉTAT DE LECTURE (Play/Pause)
         const playingNow = (status.playerState === cast.framework.messages.PlayerState.PLAYING);
         
         if (playingNow !== audioIsPlaying) {
