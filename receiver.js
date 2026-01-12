@@ -33,6 +33,7 @@ let startSeekTanscoding = false;
 let seekBarDuration = 0;
 let offsetSeekProgressif = 0;
 let startSubsAfterPlay = false;
+let currentContentId = null;
 
 
 // ==================== IMAGE NAMESPACE & STATE ====================
@@ -1307,6 +1308,10 @@ playerManager.setMessageInterceptor(
     const ct = loadRequest.media?.contentType || "";
     isAudioContent = ct.startsWith("audio/");
     console.log("[TYPE] contentType =", ct, "isAudioContent =", isAudioContent);
+    if (isAudioContent){
+        // Initialisation immédiate de l'ID pour le premier morceau
+        currentContentId = loadRequest.media.contentId;
+    }
 
     // ============================================================
     // 5️⃣ METADATA (titre, artiste, miniature…)
@@ -1344,7 +1349,7 @@ playerManager.setMessageInterceptor(
     // ============================================================
     // 6️⃣ STOP MANUEL PLAYER
     // ============================================================
-    if (!ct.startsWith("image/")) {
+    if (!ct.startsWith("image/") && !ct.startsWith("audio/")) {
       stopManualVideoIfAny();
     }
 
@@ -1352,6 +1357,29 @@ playerManager.setMessageInterceptor(
     return loadRequest;
   }
 );
+
+function updateMetadataUIAudio(metadata, contentType) {
+    if (!metadata) return;
+
+    const isAudio = contentType?.startsWith("audio/");
+    const titleText = metadata.title || "In Progress...";
+    const imgUrl = metadata.images?.[0]?.url || "assets/placeholder.png";
+
+    // Mise à jour des éléments (votre code existant)
+    if (isAudio) {
+        if (document.getElementById("track-title")) 
+            document.getElementById("track-title").textContent = metadata.title || "Unknown Title"; 
+        if (document.getElementById("track-album")) 
+            document.getElementById("track-album").textContent = metadata.albumName || "Unknown Album";  
+        if (document.getElementById("track-artist")) 
+            document.getElementById("track-artist").textContent = metadata.artist || "Unknown Artist";
+        if (document.getElementById("audio-thumbnail")) 
+            document.getElementById("audio-thumbnail").src = imgUrl;
+    } else {
+        // Logique vidéo...
+      
+    }
+}
 
 
 // ==================== UI ELEMENTS ====================
@@ -1477,13 +1505,13 @@ function handlePlayerState(state) {
     case cast.framework.ui.State.PLAYING:
       displayingManualImage = false;
       document.body.classList.add("playing");
+      toggleSpinner(false);
       if (isAudioContent) {
         audioUI.style.display = "flex";
         bottomUI.classList.remove("show");
         document.getElementById("player").style.display = "none";
         if (audioPauseIcon) audioPauseIcon.style.display = "none";
       } else {
-        toggleSpinner(false);
         if (transcoding && startSeekTanscoding){
           startSeekTanscoding = false;
           //toggleSpinner(false);
@@ -1577,7 +1605,7 @@ function stopAudioTimer() {
 }
 
 // ==================== MEDIA_STATUS POUR AUDIO ====================
-playerManager.addEventListener(
+/*playerManager.addEventListener(
   cast.framework.events.EventType.MEDIA_STATUS,
   (event) => {
     if (!isAudioContent || !event.mediaStatus) return;
@@ -1593,6 +1621,83 @@ playerManager.addEventListener(
     if (audioIsPlaying) startAudioTimer();
     else stopAudioTimer();
   }
+);*/
+
+
+// --- Listener audio ---
+playerManager.addEventListener(
+    cast.framework.events.EventType.MEDIA_STATUS,
+    (event) => {
+        if (!isAudioContent) return;
+        const status = event.mediaStatus;
+        if (!status) return;
+
+        // 1️⃣ DÉTECTION DU CHANGEMENT DE MORCEAU (LOGIQUE DE QUEUE)
+        if (status.media) {
+            const newContentId = status.media.contentId;
+
+            // Si l'ID a changé, c'est que la Queue est passée au suivant
+            if (newContentId && newContentId !== currentContentId) {
+                console.log("[RECEIVER] Transition Queue détectée :", newContentId);
+                
+                // Mise à jour de la référence
+                currentContentId = newContentId;
+
+                // Mise à jour de la durée pour le nouveau morceau
+                if (status.media.duration && status.media.duration > 0) {
+                    mediaDuration = status.media.duration;
+                }
+
+                // Mise à jour des métadonnées (Titre, Artiste, Image)
+                // On s'assure que isAudioContent est à jour pour l'UI
+                
+                updateMetadataUI(status.media.metadata, status.media.contentType);
+            }
+        }
+
+        // 2️⃣ GESTION DE LA PROGRESSION ET DU TEMPS (VOTRE LOGIQUE)
+        if (isAudioContent) {
+            const newTime = status.currentTime;
+            
+            // Mise à jour du temps actuel (Seek ou lecture normale)
+            if (typeof newTime === "number" && !isNaN(newTime)) {
+                audioCurrentTimeSec = newTime;
+                
+                // On met aussi à jour la durée si elle est présente dans le statut
+                if (status.media && status.media.duration) {
+                    mediaDuration = status.media.duration;
+                }
+                
+                updateAudioProgressUI(); 
+                // console.log(`[Audio PROGRESS] ${audioCurrentTimeSec}s / ${mediaDuration}s`);
+            }
+
+            // Gestion de l'état de lecture et du Timer
+            const playingNow = (status.playerState === cast.framework.messages.PlayerState.PLAYING);
+            
+            if (playingNow !== audioIsPlaying) {
+                audioIsPlaying = playingNow;
+                if (audioIsPlaying) {
+                    startAudioTimer();
+                } else {
+                    stopAudioTimer();
+                }
+            }
+        }
+    }
+);
+
+// --- Écouteur complémentaire pour la durée (Sécurité) ---
+playerManager.addEventListener(
+    cast.framework.events.EventType.DURATION_CHANGED, 
+    (event) => {
+        if (!isAudioContent) return;
+        if (event.duration && event.duration > 0) {
+            mediaDuration = event.duration;
+            console.log("[RECEIVER] Durée mise à jour (Event):", mediaDuration);
+            updateAudioProgressUI();
+        }
+    }
 );
 
 
