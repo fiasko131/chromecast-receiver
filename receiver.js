@@ -1494,8 +1494,12 @@ function handlePlayerState(state) {
   // Cet événement est parfait car il est synchronisé avec l'UI réelle
   if (isAudioContent){
     const mediaStatus = playerManager.getMediaStatus();
+    castDebugLogger.error("castAudio", "mediaStatus "+mediaStatus);
     if (mediaStatus && mediaStatus.media) {
+      
       const newId = mediaStatus.media.contentId;
+      castDebugLogger.error("castAudio", "newId "+newId);
+      castDebugLogger.error("castAudio", "title "+mediaStatus.media.metadata.title);
       if (newId !== currentContentId) {
           castDebugLogger.error("castAudio", "updateUI called "+meta.title);
           currentContentId = newId;
