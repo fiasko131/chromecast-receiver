@@ -1688,7 +1688,7 @@ playerManager.addEventListener(
 );
 
 // --- Écouteur complémentaire pour la durée (Sécurité) ---
-playerManager.addEventListener(
+/*playerManager.addEventListener(
     cast.framework.events.EventType.DURATION_CHANGED, 
     (event) => {
         if (!isAudioContent) return;
@@ -1698,7 +1698,7 @@ playerManager.addEventListener(
             updateAudioProgressUI();
         }
     }
-);
+);*/
 
 
 function startVideoProgressTimer() {
