@@ -1895,7 +1895,7 @@ context.loggerLevel = cast.framework.LoggerLevel.ERROR;
 context.addEventListener(cast.framework.system.EventType.READY, () => {
   if (!castDebugLogger.debugOverlayElement_) {
       // Enable debug logger and show a 'DEBUG MODE' overlay at top left corner.
-      castDebugLogger.setEnabled(true);
+      castDebugLogger.setEnabled(false);
   }
 });
 
